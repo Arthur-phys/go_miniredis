@@ -49,7 +49,7 @@ func (s *Server) Run() {
 	}
 }
 
-func MakeServer(ipAddress string, port uint16, options map[string]uint) (Server, error) {
+func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Conn) Parser, options map[string]uint) (Server, error) {
 	var server Server
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -61,7 +61,7 @@ func MakeServer(ipAddress string, port uint16, options map[string]uint) (Server,
 	listenerConfig := net.ListenConfig{}
 	if keepAlive, ok := options["KeepAlive"]; ok {
 		listenerConfig.KeepAlive = time.Duration(keepAlive) * time.Second
-		listenerConfig.KeepAliveConfig.Enable = true
+		// listenerConfig.KeepAliveConfig.Enable = true
 		slog.Debug("[MiniRedis]", slog.Int("KeepAliveConfig configuration set to seconds", int(keepAlive)))
 	}
 
@@ -84,6 +84,7 @@ func MakeServer(ipAddress string, port uint16, options map[string]uint) (Server,
 	server.currentDictUsedLock = &sync.Mutex{}
 	server.currentThreadsLock = &sync.Mutex{}
 	server.dict = make(map[string]string)
+	server.parserInstantiator = parserInstantiator
 
 	return server, nil
 }
