@@ -12,13 +12,13 @@ type RESPParser struct {
 	stream Stream
 }
 
-func (r *RESPParser) ParseCommand() (f func(d *map[string]string) ([]byte, error), err error) {
+func (r *RESPParser) ParseCommand() (f func(d server.CacheStore) ([]byte, error), err error) {
 	firstByte, err := r.stream.TakeOne()
 	if err != nil {
 		return
 	}
 	if firstByte != '*' {
-		return func(d *map[string]string) ([]byte, error) { return []byte{}, nil }, e.Error{} // Change
+		return func(d server.CacheStore) ([]byte, error) { return []byte{}, nil }, e.Error{} // Change
 	}
 	bytesRead, err := r.stream.ReadUntilSliceFound([]byte{'\r', '\n'})
 	if err != nil {
@@ -38,22 +38,28 @@ func (r *RESPParser) ParseCommand() (f func(d *map[string]string) ([]byte, error
 	return selectFunction(arr)
 }
 
-func selectFunction(arr []string) (f func(d *map[string]string) ([]byte, error), err error) {
-	if len(arr) < 2 {
-		return
-	}
+func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), err error) {
 	switch arr[0] {
 	case "GET":
-		return func(d *map[string]string) ([]byte, error) {
-			if val, ok := (*d)[arr[1]]; ok {
-				return BlobStringToRESP(val), nil // Proper formatting must ben ensured here. Check ToRESP function
+		if len(arr) != 2 {
+			return // Change proper error handling
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			if val, ok := d.Get(arr[1]); ok {
+				return BlobStringToRESP(val), nil
 			} else {
 				return []byte{}, e.Error{} //Change
 			}
 		}, nil
 	case "SET":
-		return func(d *map[string]string) ([]byte, error) {
-			(*d)[arr[1]] = arr[2]
+		if len(arr) != 3 {
+			return // Change proper error handling
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			err := d.Set(arr[1], arr[2])
+			if err != nil {
+				return []byte{}, err
+			}
 			return NullToRESP(), nil
 		}, nil
 	case "LPUSH":

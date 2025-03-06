@@ -7,14 +7,14 @@ import (
 )
 
 type Parser interface {
-	ParseCommand() (func(d *map[string]string) ([]byte, error), error)
+	ParseCommand() (func(d CacheStore) ([]byte, error), error)
 }
 
 type Connection struct {
 	conn               *net.Conn
 	dictUsedLock       *sync.Mutex
 	currentThreadsLock *sync.Mutex
-	dict               *map[string]string
+	cacheStore         CacheStore
 	currentGoRoutines  *uint16
 	parser             Parser
 }
@@ -35,7 +35,7 @@ func (c *Connection) Answer() {
 	}
 
 	c.dictUsedLock.Lock()
-	res, err := command(c.dict)
+	res, err := command(c.cacheStore)
 	c.dictUsedLock.Unlock()
 	if err != nil {
 		slog.Error("[MiniRedis]", "An error occurred while returning a response to the client", err)

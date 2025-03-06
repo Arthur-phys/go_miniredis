@@ -11,6 +11,7 @@ func main() {
 		"127.0.0.1",
 		8000,
 		core.NewRESPParser,
+		core.NewShardedCacheStore,
 		map[string]uint{"maxGoRoutines": 10, "keepAlive": 10},
 	)
 	if err != nil {

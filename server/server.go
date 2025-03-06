@@ -15,10 +15,18 @@ type Server struct {
 	listener            net.Listener
 	maxGoRoutines       uint16
 	currentGoRoutines   uint16
-	dict                map[string]string
+	cacheStore          CacheStore
 	currentThreadsLock  *sync.Mutex
 	currentDictUsedLock *sync.Mutex
 	parserInstantiator  func(c *net.Conn) Parser
+}
+
+type CacheStore interface {
+	Get(key string) (string, bool)
+	Set(key string, value string) error
+	LPush(key string, args ...string) error
+	LPop(key string) (string, error)
+	LLen(key string) (string, error)
 }
 
 func (s *Server) Accept() (Connection, error) {
@@ -49,7 +57,7 @@ func (s *Server) Run() {
 	}
 }
 
-func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Conn) Parser, options map[string]uint) (Server, error) {
+func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Conn) Parser, cacheStoreInstantiator func() CacheStore, options map[string]uint) (Server, error) {
 	var server Server
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -83,7 +91,7 @@ func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Co
 	server.listener = listener
 	server.currentDictUsedLock = &sync.Mutex{}
 	server.currentThreadsLock = &sync.Mutex{}
-	server.dict = make(map[string]string)
+	server.cacheStore = cacheStoreInstantiator()
 	server.parserInstantiator = parserInstantiator
 
 	return server, nil
@@ -95,7 +103,7 @@ func (s *Server) newConnection(conn *net.Conn) Connection {
 	connection.currentGoRoutines = &s.currentGoRoutines
 	connection.currentThreadsLock = s.currentThreadsLock
 	connection.dictUsedLock = s.currentDictUsedLock
-	connection.dict = &s.dict
+	connection.cacheStore = s.cacheStore
 	connection.parser = s.parserInstantiator(conn)
 
 	return connection
