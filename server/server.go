@@ -95,6 +95,7 @@ func (s *Server) newConnection(conn *net.Conn) Connection {
 	connection.currentGoRoutines = &s.currentGoRoutines
 	connection.currentThreadsLock = s.currentThreadsLock
 	connection.dictUsedLock = s.currentDictUsedLock
+	connection.dict = &s.dict
 	connection.parser = s.parserInstantiator(conn)
 
 	return connection

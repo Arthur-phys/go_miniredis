@@ -14,7 +14,7 @@ func main() {
 		map[string]uint{"maxGoRoutines": 10, "keepAlive": 10},
 	)
 	if err != nil {
-		slog.Error("Fatal error occurred!", err)
+		slog.Error("Fatal error occurred!", "", err)
 		return
 	}
 	s.Run()

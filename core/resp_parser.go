@@ -2,7 +2,6 @@ package core
 
 import (
 	"bufio"
-	"fmt"
 	e "miniredis/error"
 	"miniredis/server"
 	"net"
@@ -47,15 +46,20 @@ func selectFunction(arr []string) (f func(d *map[string]string) ([]byte, error),
 	case "GET":
 		return func(d *map[string]string) ([]byte, error) {
 			if val, ok := (*d)[arr[1]]; ok {
-				return fmt.Appendf([]byte{}, val), nil // Proper formatting must ben ensured here. Check ToRESP function
+				return BlobStringToRESP(val), nil // Proper formatting must ben ensured here. Check ToRESP function
 			} else {
 				return []byte{}, e.Error{} //Change
 			}
 		}, nil
 	case "SET":
+		return func(d *map[string]string) ([]byte, error) {
+			(*d)[arr[1]] = arr[2]
+			return NullToRESP(), nil
+		}, nil
 	case "LPUSH":
 	case "LPOP":
 	case "LLEN":
+	default:
 	}
 	return
 }
@@ -65,7 +69,7 @@ func (r *RESPParser) miniRedisBlobStringFromBytes() (s string, err error) {
 	if err != nil {
 		return
 	}
-	if firstByte != '*' {
+	if firstByte != '$' {
 		return "", e.Error{} // Change
 	}
 	bytesRead, err := r.stream.ReadUntilSliceFound([]byte{'\r', '\n'})
