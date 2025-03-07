@@ -12,7 +12,6 @@ type Parser interface {
 
 type Connection struct {
 	conn               *net.Conn
-	dictUsedLock       *sync.Mutex
 	currentThreadsLock *sync.Mutex
 	cacheStore         CacheStore
 	currentGoRoutines  *uint16
@@ -34,9 +33,10 @@ func (c *Connection) Answer() {
 		return
 	}
 
-	c.dictUsedLock.Lock()
+	c.cacheStore.Lock()
 	res, err := command(c.cacheStore)
-	c.dictUsedLock.Unlock()
+	c.cacheStore.Unlock()
+
 	if err != nil {
 		slog.Error("[MiniRedis]", "An error occurred while returning a response to the client", err)
 		return

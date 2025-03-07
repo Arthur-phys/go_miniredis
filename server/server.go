@@ -12,21 +12,22 @@ import (
 )
 
 type Server struct {
-	listener            net.Listener
-	maxGoRoutines       uint16
-	currentGoRoutines   uint16
-	cacheStore          CacheStore
-	currentThreadsLock  *sync.Mutex
-	currentDictUsedLock *sync.Mutex
-	parserInstantiator  func(c *net.Conn) Parser
+	listener           net.Listener
+	maxGoRoutines      uint16
+	currentGoRoutines  uint16
+	cacheStore         CacheStore
+	currentThreadsLock *sync.Mutex
+	parserInstantiator func(c *net.Conn) Parser
 }
 
 type CacheStore interface {
 	Get(key string) (string, bool)
 	Set(key string, value string) error
-	LPush(key string, args ...string) error
-	LPop(key string) (string, error)
-	LLen(key string) (string, error)
+	RPush(key string, args ...string) error
+	RPop(key string) (string, error)
+	LLen(key string) (int, error)
+	Lock()
+	Unlock()
 }
 
 func (s *Server) Accept() (Connection, error) {
@@ -37,13 +38,13 @@ func (s *Server) Accept() (Connection, error) {
 		return Connection{}, miniRedisError
 	}
 	s.currentThreadsLock.Lock()
-	defer s.currentThreadsLock.Unlock()
 	s.currentGoRoutines += 1
 	slog.Debug("[MiniRedis]", slog.Int("Current GoRoutines", int(s.currentGoRoutines)))
 	if s.maxGoRoutines < s.currentGoRoutines {
 		conn.Close()
 		return Connection{}, e.Error{} // Change
 	}
+	s.currentThreadsLock.Unlock()
 	return s.newConnection(&conn), nil
 }
 
@@ -89,7 +90,6 @@ func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Co
 	slog.Debug("[MiniRedis]", slog.Int("MaxGoRoutines set to", int(server.maxGoRoutines)))
 
 	server.listener = listener
-	server.currentDictUsedLock = &sync.Mutex{}
 	server.currentThreadsLock = &sync.Mutex{}
 	server.cacheStore = cacheStoreInstantiator()
 	server.parserInstantiator = parserInstantiator
@@ -102,7 +102,6 @@ func (s *Server) newConnection(conn *net.Conn) Connection {
 	connection.conn = conn
 	connection.currentGoRoutines = &s.currentGoRoutines
 	connection.currentThreadsLock = s.currentThreadsLock
-	connection.dictUsedLock = s.currentDictUsedLock
 	connection.cacheStore = s.cacheStore
 	connection.parser = s.parserInstantiator(conn)
 

@@ -56,18 +56,50 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 			return // Change proper error handling
 		}
 		return func(d server.CacheStore) ([]byte, error) {
-			err := d.Set(arr[1], arr[2])
+			err = d.Set(arr[1], arr[2])
 			if err != nil {
 				return []byte{}, err
 			}
 			return NullToRESP(), nil
 		}, nil
-	case "LPUSH":
-	case "LPOP":
+	case "RPUSH":
+		if len(arr) < 3 {
+			return
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			err = d.RPush(arr[1], arr[2:]...)
+			if err != nil {
+				return []byte{}, err //Propper error handling
+			}
+			return NullToRESP(), nil
+		}, nil
+	case "RPOP":
+		if len(arr) != 2 {
+			return
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			val, err := d.RPop(arr[1])
+			if err != nil {
+				return []byte{}, err // Propper error handling
+			}
+			return BlobStringToRESP(val), nil
+		}, nil
 	case "LLEN":
+		if len(arr) != 2 {
+			return
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			val, err := d.LLen(arr[1])
+			if err != nil {
+				return []byte{}, err // Propper error handling
+			}
+			return IntToRESP(val), nil
+		}, nil
 	default:
+		return func(d server.CacheStore) ([]byte, error) {
+			return ErrToRESP(e.Error{}), nil
+		}, e.Error{}
 	}
-	return
 }
 
 func (r *RESPParser) miniRedisBlobStringFromBytes() (s string, err error) {
