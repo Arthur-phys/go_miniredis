@@ -1,4 +1,4 @@
-package core
+package caches
 
 import (
 	e "miniredis/error"
