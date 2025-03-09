@@ -49,20 +49,20 @@ func TestReadUntilSliceFound_Should_Find_Whole_Slice_When_Present(t *testing.T) 
 	}
 }
 
-func TestReadUntilSliceFound_Should_Return_Error_When_First_Element_Found_But_The_Rest_Is_Different(t *testing.T) {
-	mockReader := NewMockReader([]byte{'h', 'o', 'l', 'a'}, 6)
+func TestReadUntilSliceFound_Should_Return_Whole_Slice_From_Reader_When_Slice_Looked_For_Is_Not_Present(t *testing.T) {
+	mockReader := NewMockReader([]byte{'h', 'o', 'l', 'a'}, 8)
 	stream := Stream{bufio.NewReader(&mockReader)}
 	bytesRead, err := stream.ReadUntilSliceFound([]byte{'l', 'x'})
-	if err == nil {
-		t.Errorf("Error did not occur!")
+	if err != io.EOF {
+		t.Errorf("Unexpected error occurred! %e", err)
 	}
-	if len(bytesRead) != 2 {
-		t.Errorf("len for bytesRead is not 2! %v", len(bytesRead))
+	if len(bytesRead) != 8 {
+		t.Errorf("len for bytesRead is not 8, reader was not exhausted! %v", len(bytesRead))
 	}
-	mockBytes := []byte{'h', 'o'}
+	mockBytes := []byte{'h', 'o', 'l', 'a', 'h', 'o', 'l', 'a'}
 	for i := range bytesRead {
 		if mockBytes[i] != bytesRead[i] {
-			t.Errorf("bytesRead is not '[h,o]'! %v", bytesRead)
+			t.Errorf("bytesRead is not '[h,o,l,a,h,o,l,a]'! %v", bytesRead)
 		}
 	}
 }

@@ -15,25 +15,34 @@ func (s *Stream) ReadUntilFound(delim byte) ([]byte, error) {
 	return s.byteReader.ReadBytes(delim)
 }
 
-func (s *Stream) ReadUntilSliceFound(delim []byte) (bytes []byte, err error) {
+func (s *Stream) ReadUntilSliceFound(delim []byte) ([]byte, error) {
 	if len(delim) == 0 {
 		return []byte{}, e.Error{} // Change
 	}
-	bytes, err = s.byteReader.ReadBytes(delim[0])
-	if err != nil {
-		return
-	}
-	bytes = bytes[:len(bytes)-1]
-	for i := 1; i < len(delim); i++ {
-		newByte, err := s.TakeOne()
+	var sliceFoundRecursive func([]byte, []byte) ([]byte, error)
+	sliceFoundRecursive = func(delim []byte, bytesRead []byte) ([]byte, error) {
+		bytes, err := s.byteReader.ReadBytes(delim[0])
+		bytesRead = append(bytesRead, bytes...)
 		if err != nil {
-			return bytes, err
+			return bytesRead, err
 		}
-		if newByte != delim[i] {
-			return bytes, e.Error{}
+		for i := 1; i < len(delim); i++ {
+			newByte, err := s.TakeOne()
+			if err != nil {
+				return bytesRead, err
+			}
+			bytesRead = append(bytesRead, newByte)
+			if newByte != delim[i] {
+				return sliceFoundRecursive(delim, bytesRead) // Change
+			}
 		}
+		return bytesRead, nil
 	}
-	return
+	bytes, err := sliceFoundRecursive(delim, []byte{})
+	if err == nil {
+		bytes = bytes[:len(bytes)-len(delim)]
+	}
+	return bytes, err
 }
 
 func (s *Stream) ReadNBytes(n int) ([]byte, int, error) {
