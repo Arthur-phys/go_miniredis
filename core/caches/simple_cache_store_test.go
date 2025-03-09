@@ -60,3 +60,63 @@ func TestRPop_Should_Return_Error_When_List_Is_Not_Present(t *testing.T) {
 		t.Errorf("Expected error but obtained nil! %e", err)
 	}
 }
+
+func TestLPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	err := cs.LPush("key", "value")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	err = cs.LPush("key", "value_2")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	if val, err := cs.LPop("key"); err != nil || val != "value_2" {
+		t.Errorf("An error occured! %e - %v", err, val)
+	}
+}
+
+func TestLPop_Should_Return_Error_When_List_Is_Not_Present(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	if _, err := cs.LPop("key"); err == nil {
+		t.Errorf("Expected error but obtained nil! %e", err)
+	}
+}
+
+func TestLIndex_Should_Return_Element_When_Present_In_List(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	err := cs.LPush("key", "value")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	err = cs.RPush("key", "value_2")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	err = cs.LPush("key", "value_3")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	if str, ok := cs.LIndex("key", 0); !ok || str != "value_3" {
+		t.Errorf("Unable to retrieve first value (0) from 'key' list! %v", str)
+	}
+}
+
+func TestLIndex_Should_Return_False_When_Index_Not_Present_In_List(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	err := cs.LPush("key", "value")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	err = cs.RPush("key", "value_2")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	err = cs.LPush("key", "value_3")
+	if err != nil {
+		t.Errorf("An error occurred! %v", err)
+	}
+	if _, ok := cs.LIndex("key", 5); ok {
+		t.Errorf("Was able to retrieve unexistant value!")
+	}
+}

@@ -35,6 +35,18 @@ func (c *ShardedCacheStore) RPop(key string) (string, error) {
 	return "", nil
 }
 
+func (c *ShardedCacheStore) LPush(key string, args ...string) error {
+	return nil
+}
+
+func (c *ShardedCacheStore) LPop(key string) (string, error) {
+	return "", nil
+}
+
+func (c *ShardedCacheStore) LIndex(key string, index int) (string, bool) {
+	return "", true
+}
+
 func (c *ShardedCacheStore) LLen(key string) (int, error) {
 	return 1, nil
 }

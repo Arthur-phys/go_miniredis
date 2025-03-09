@@ -52,6 +52,35 @@ func (c *SimpleCacheStore) RPop(key string) (string, error) {
 	}
 }
 
+func (c *SimpleCacheStore) LPush(key string, args ...string) error {
+	if _, ok := c.arrayDictionary[key]; ok {
+		c.arrayDictionary[key] = append(args, c.arrayDictionary[key]...)
+	} else {
+		c.arrayDictionary[key] = args
+	}
+	return nil
+}
+
+func (c *SimpleCacheStore) LPop(key string) (string, error) {
+	var x string
+	if v, ok := c.arrayDictionary[key]; ok {
+		x, v = v[0], v[1:]
+		if len(v) == 0 {
+			delete(c.arrayDictionary, key)
+		}
+		return x, nil
+	} else {
+		return "", e.Error{} //Change
+	}
+}
+
+func (c *SimpleCacheStore) LIndex(key string, index int) (string, bool) {
+	if v, ok := c.arrayDictionary[key]; ok && len(v) > index && index >= 0 {
+		return v[index], true
+	}
+	return "", false //Change
+}
+
 func (c *SimpleCacheStore) LLen(key string) (int, error) {
 	return len(c.arrayDictionary[key]), nil
 }
