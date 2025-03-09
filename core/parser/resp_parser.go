@@ -84,6 +84,28 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 			}
 			return BlobStringToRESP(val), nil
 		}, nil
+	case "LPUSH":
+		if len(arr) < 3 {
+			return
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			err = d.LPush(arr[1], arr[2:]...)
+			if err != nil {
+				return []byte{}, err //Propper error handling
+			}
+			return NullToRESP(), nil
+		}, nil
+	case "LPOP":
+		if len(arr) != 2 {
+			return
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			val, err := d.LPop(arr[1])
+			if err != nil {
+				return []byte{}, err // Propper error handling
+			}
+			return BlobStringToRESP(val), nil
+		}, nil
 	case "LLEN":
 		if len(arr) != 2 {
 			return
@@ -94,6 +116,21 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 				return []byte{}, err // Propper error handling
 			}
 			return IntToRESP(val), nil
+		}, nil
+	case "LINDEX":
+		if len(arr) != 3 {
+			return
+		}
+		return func(d server.CacheStore) ([]byte, error) {
+			index, err := strconv.Atoi(arr[2])
+			if err != nil {
+				return []byte{}, err
+			}
+			val, b := d.LIndex(arr[1], index)
+			if !b {
+				return []byte{}, e.Error{} // Propper error handling
+			}
+			return BlobStringToRESP(val), nil
 		}, nil
 	default:
 		return func(d server.CacheStore) ([]byte, error) {
