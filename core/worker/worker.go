@@ -7,34 +7,22 @@ import (
 )
 
 type SimpleWorker struct {
-	cacheStore        CacheStore
-	parseInstantiator func(c *net.Conn) Parser
+	cacheStore        server.CacheStore
+	parseInstantiator func(c *net.Conn) server.Parser
 	connectionChannel chan net.Conn
 	id                uint64
 }
 
-type CacheStore interface {
-	Get(key string) (string, bool)
-	Set(key string, value string) error
-	RPush(key string, args ...string) error
-	RPop(key string) (string, error)
-	LLen(key string) (int, error)
-	LPop(key string) (string, error)
-	LPush(key string, args ...string) error
-	LIndex(key string, index int) (string, bool)
-	Lock()
-	Unlock()
+func NewSimpleWorker(
+	cacheStore server.CacheStore,
+	parseInstantiator func(c *net.Conn) server.Parser,
+	connectionChannel chan net.Conn,
+	id uint64,
+) server.Worker {
+	return &SimpleWorker{cacheStore, parseInstantiator, connectionChannel, id}
 }
 
-type Parser interface {
-	ParseCommand() (func(d CacheStore) ([]byte, error), error)
-}
-
-func NewSimpleWorker(server *server.Server, id uint64) server.Worker {
-	return &SimpleWorker{server.cacheStore, parseInstantiator, connectionChannel, id}
-}
-
-func (w *SimpleWorker) HandleConnection(c net.Conn) {
+func (w *SimpleWorker) handleConnection(c net.Conn) {
 	parser := w.parseInstantiator(&c)
 	command, err := parser.ParseCommand()
 	if err != nil {

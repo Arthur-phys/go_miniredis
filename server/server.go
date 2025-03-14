@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"miniredis/core/worker"
 	e "miniredis/error"
 	"net"
 	"os"
@@ -13,14 +12,30 @@ import (
 
 type Server struct {
 	listener           net.Listener
-	cacheStore         worker.CacheStore
+	cacheStore         CacheStore
 	connectionChannel  chan net.Conn
-	parserInstantiator func(c *net.Conn) worker.Parser
+	parserInstantiator func(c *net.Conn) Parser
 }
 
 type Worker interface {
 	Run()
-	HandleConnection(c net.Conn)
+}
+
+type Parser interface {
+	ParseCommand() (func(d CacheStore) ([]byte, error), error)
+}
+
+type CacheStore interface {
+	Get(key string) (string, bool)
+	Set(key string, value string) error
+	RPush(key string, args ...string) error
+	RPop(key string) (string, error)
+	LLen(key string) (int, error)
+	LPop(key string) (string, error)
+	LPush(key string, args ...string) error
+	LIndex(key string, index int) (string, bool)
+	Lock()
+	Unlock()
 }
 
 func (s *Server) Accept() error {
@@ -43,7 +58,7 @@ func (s *Server) Run() {
 	}
 }
 
-func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Conn) worker.Parser, cacheStoreInstantiator func() worker.CacheStore, workerInstantiator func(s *Server, n uint) Worker, workerNumber uint) (Server, error) {
+func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Conn) Parser, cacheStoreInstantiator func() CacheStore, workerInstantiator func(s *Server, n uint) Worker, workerNumber uint) (Server, error) {
 	var server Server
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))

@@ -1,7 +1,7 @@
 package caches
 
 import (
-	"miniredis/core/worker"
+	"miniredis/server"
 	"sync"
 )
 
@@ -11,7 +11,7 @@ type ShardedCacheStore struct {
 	arrayDictionary  map[string][]string
 }
 
-func NewShardedCacheStore() worker.CacheStore {
+func NewShardedCacheStore() server.CacheStore {
 	return &ShardedCacheStore{
 		sync.Mutex{},
 		make(map[string]string),
