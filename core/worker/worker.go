@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"io"
 	"log/slog"
 	"miniredis/server"
 	"net"
@@ -29,37 +30,47 @@ func NewSimpleWorkerInstantiator(
 	}
 }
 
-func (w *SimpleWorker) handleConnection(c net.Conn) {
-	defer c.Close()
-	parser := w.parseInstantiator(&c)
-	command, err := parser.ParseCommand()
-	if err != nil {
-		slog.Error("[MiniRedis]", "An error occurred while parsing the command", err)
-		return
-	}
+func (w *SimpleWorker) handleConnection(c *net.Conn) {
+	defer (*c).Close()
+	parser := w.parseInstantiator(c)
+	for {
+		command, err := parser.ParseCommand()
+		if err == io.EOF {
+			slog.Debug("Finished attending connection",
+				slog.Uint64("WORKER_ID", w.id),
+				slog.String("CLIENT", (*c).RemoteAddr().String()),
+			)
+			return
+		} else if err != nil {
+			slog.Error("An error occurred while parsing the command", "ERROR", err)
+			return
+		}
 
-	w.cacheStore.Lock()
-	res, err := command(w.cacheStore)
-	w.cacheStore.Unlock()
+		w.cacheStore.Lock()
+		res, err := command(w.cacheStore)
+		w.cacheStore.Unlock()
 
-	if err != nil {
-		slog.Error("[MiniRedis]", "An error occurred while returning a response to the client", err)
-		return
-	}
-	_, err = c.Write(res)
-	if err != nil {
-		slog.Error("[MiniRedis]", "An error occurred while returning a response to the client", err)
-		return
+		if err != nil {
+			slog.Error("An error occurred while returning a response to the client", "ERROR", err)
+			return
+		}
+		_, err = (*c).Write(res)
+		if err != nil {
+			slog.Error("An error occurred while returning a response to the client", "ERROR", err)
+			return
+		}
 	}
 }
 
 func (w *SimpleWorker) Run() {
-	slog.Debug("[MiniRedis]", slog.Uint64("Starting Worker with ID", w.id))
+	slog.Debug("Starting Worker", slog.Uint64("WORKER_ID", w.id))
 	go func() {
 		for {
-			slog.Debug("[MiniRedis]", slog.String("Status of routine:", "Waiting for connection"))
-			incomingConnection := <-w.connectionChannel
-			w.handleConnection(incomingConnection)
+			if incomingConnection, ok := <-w.connectionChannel; ok {
+				w.handleConnection(&incomingConnection)
+			} else {
+				break
+			}
 		}
 	}()
 }

@@ -48,7 +48,7 @@ func (s *Server) Run() {
 	for {
 		err := s.Accept()
 		if err != nil {
-			slog.Error("[MiniRedis]", "Error", err)
+			slog.Error(err.Error())
 		}
 	}
 }
@@ -58,18 +58,20 @@ func MakeServer(
 	cacheStoreInstantiator func() CacheStore,
 	workerInstantiator func(c CacheStore, jobs chan net.Conn, id uint64) Worker,
 	workerNumber uint,
+	keepAlive uint,
 ) (Server, error) {
 	var server Server
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	logger = logger.With("[MiniRedis]", "")
 	logger = logger.With("IP", ipAddress)
 	logger = logger.With("PORT", port)
 	slog.SetDefault(logger)
-	slog.Info("[MiniRedis]", slog.String("Initializing Server", ""))
+	slog.Info("Initializing Server")
 
 	listenerConfig := net.ListenConfig{}
-	listenerConfig.KeepAlive = time.Duration(10) * time.Second
-	slog.Debug("[MiniRedis]", slog.Int("KeepAliveConfig configuration set to seconds", 10))
+	listenerConfig.KeepAlive = time.Duration(keepAlive) * time.Second
+	slog.Debug("KeepAliveConfig configuration set", slog.Int("KEAAPLIVE", int(keepAlive)))
 
 	listener, err := listenerConfig.Listen(context.Background(), "tcp", fmt.Sprintf("%v:%v", ipAddress, port))
 	if err != nil {
@@ -77,7 +79,7 @@ func MakeServer(
 		miniredisError.From = err
 		return Server{}, miniredisError
 	}
-	slog.Debug("[MiniRedis]", slog.String("Listener created", ""))
+	slog.Debug("Listener created")
 
 	server.listener = listener
 	server.cacheStore = cacheStoreInstantiator()
