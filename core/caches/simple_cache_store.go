@@ -48,7 +48,7 @@ func (c *SimpleCacheStore) RPop(key string) (string, error) {
 		}
 		return x, nil
 	} else {
-		return "", e.Error{}
+		return "", e.Error{} // Change
 	}
 }
 

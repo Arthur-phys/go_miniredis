@@ -51,12 +51,18 @@ func (w *SimpleWorker) handleConnection(c *net.Conn) {
 		w.cacheStore.Unlock()
 
 		if err != nil {
-			slog.Error("An error occurred while returning a response to the client", "ERROR", err)
+			slog.Error("An error occurred while returning a response to the client", "ERROR", err,
+				slog.Uint64("WORKER_ID", w.id),
+				slog.String("CLIENT", (*c).RemoteAddr().String()),
+			)
 			return
 		}
 		_, err = (*c).Write(res)
 		if err != nil {
-			slog.Error("An error occurred while returning a response to the client", "ERROR", err)
+			slog.Error("An error occurred while returning a response to the client", "ERROR", err,
+				slog.Uint64("WORKER_ID", w.id),
+				slog.String("CLIENT", (*c).RemoteAddr().String()),
+			)
 			return
 		}
 	}
