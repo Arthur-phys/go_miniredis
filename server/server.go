@@ -20,10 +20,6 @@ type Worker interface {
 	Run()
 }
 
-type Parser interface {
-	ParseCommand() (func(d CacheStore) ([]byte, error), error)
-}
-
 type CacheStore interface {
 	Get(key string) (string, bool)
 	Set(key string, value string) error
@@ -85,6 +81,7 @@ func MakeServer(
 
 	server.listener = listener
 	server.cacheStore = cacheStoreInstantiator()
+	server.connectionChannel = make(chan net.Conn)
 
 	for i := range workerNumber {
 		worker := workerInstantiator(server.cacheStore, server.connectionChannel, uint64(i))

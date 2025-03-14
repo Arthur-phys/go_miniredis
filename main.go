@@ -14,7 +14,7 @@ func main() {
 		8000,
 		caches.NewSimpleCacheStore,
 		worker.NewSimpleWorkerInstantiator(parser.NewRESPParser),
-		1024,
+		5,
 	)
 	if err != nil {
 		slog.Error("Fatal error occurred!", "", err)

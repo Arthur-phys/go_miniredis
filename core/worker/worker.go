@@ -8,20 +8,29 @@ import (
 
 type SimpleWorker struct {
 	cacheStore        server.CacheStore
-	parseInstantiator func(c *net.Conn) server.Parser
+	parseInstantiator func(c *net.Conn) Parser
 	connectionChannel chan net.Conn
 	id                uint64
 }
 
+type Parser interface {
+	ParseCommand() (func(d server.CacheStore) ([]byte, error), error)
+}
+
 func NewSimpleWorkerInstantiator(
-	parseInstantiator func(c *net.Conn) server.Parser,
-) func(cacheStore server.CacheStore, connectionChannel chan net.Conn, id uint64) server.Worker {
+	parseInstantiator func(c *net.Conn) Parser,
+) func(
+	cacheStore server.CacheStore,
+	connectionChannel chan net.Conn,
+	id uint64,
+) server.Worker {
 	return func(cacheStore server.CacheStore, connectionChannel chan net.Conn, id uint64) server.Worker {
 		return &SimpleWorker{cacheStore, parseInstantiator, connectionChannel, id}
 	}
 }
 
 func (w *SimpleWorker) handleConnection(c net.Conn) {
+	defer c.Close()
 	parser := w.parseInstantiator(&c)
 	command, err := parser.ParseCommand()
 	if err != nil {
@@ -48,6 +57,7 @@ func (w *SimpleWorker) Run() {
 	slog.Debug("[MiniRedis]", slog.Uint64("Starting Worker with ID", w.id))
 	go func() {
 		for {
+			slog.Debug("[MiniRedis]", slog.String("Status of routine:", "Waiting for connection"))
 			incomingConnection := <-w.connectionChannel
 			w.handleConnection(incomingConnection)
 		}

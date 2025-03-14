@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"miniredis/core/worker"
 	e "miniredis/error"
 	"miniredis/server"
 	"net"
@@ -163,6 +164,6 @@ func (r *RESPParser) miniRedisBlobStringFromBytes() (s string, err error) {
 	return string(blobString), nil
 }
 
-func NewRESPParser(conn *net.Conn) server.Parser {
+func NewRESPParser(conn *net.Conn) worker.Parser {
 	return &RESPParser{Stream{bufio.NewReader(*conn)}}
 }
