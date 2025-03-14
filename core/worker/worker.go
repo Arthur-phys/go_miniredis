@@ -13,13 +13,12 @@ type SimpleWorker struct {
 	id                uint64
 }
 
-func NewSimpleWorker(
-	cacheStore server.CacheStore,
+func NewSimpleWorkerInstantiator(
 	parseInstantiator func(c *net.Conn) server.Parser,
-	connectionChannel chan net.Conn,
-	id uint64,
-) server.Worker {
-	return &SimpleWorker{cacheStore, parseInstantiator, connectionChannel, id}
+) func(cacheStore server.CacheStore, connectionChannel chan net.Conn, id uint64) server.Worker {
+	return func(cacheStore server.CacheStore, connectionChannel chan net.Conn, id uint64) server.Worker {
+		return &SimpleWorker{cacheStore, parseInstantiator, connectionChannel, id}
+	}
 }
 
 func (w *SimpleWorker) handleConnection(c net.Conn) {

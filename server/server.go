@@ -11,10 +11,9 @@ import (
 )
 
 type Server struct {
-	listener           net.Listener
-	cacheStore         CacheStore
-	connectionChannel  chan net.Conn
-	parserInstantiator func(c *net.Conn) Parser
+	listener          net.Listener
+	cacheStore        CacheStore
+	connectionChannel chan net.Conn
 }
 
 type Worker interface {
@@ -57,8 +56,13 @@ func (s *Server) Run() {
 		}
 	}
 }
-
-func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Conn) Parser, cacheStoreInstantiator func() CacheStore, workerInstantiator func(s *Server, n uint) Worker, workerNumber uint) (Server, error) {
+func MakeServer(
+	ipAddress string,
+	port uint16,
+	cacheStoreInstantiator func() CacheStore,
+	workerInstantiator func(c CacheStore, jobs chan net.Conn, id uint64) Worker,
+	workerNumber uint,
+) (Server, error) {
 	var server Server
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -69,7 +73,6 @@ func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Co
 
 	listenerConfig := net.ListenConfig{}
 	listenerConfig.KeepAlive = time.Duration(10) * time.Second
-	// listenerConfig.KeepAliveConfig.Enable = true
 	slog.Debug("[MiniRedis]", slog.Int("KeepAliveConfig configuration set to seconds", 10))
 
 	listener, err := listenerConfig.Listen(context.Background(), "tcp", fmt.Sprintf("%v:%v", ipAddress, port))
@@ -82,10 +85,9 @@ func MakeServer(ipAddress string, port uint16, parserInstantiator func(c *net.Co
 
 	server.listener = listener
 	server.cacheStore = cacheStoreInstantiator()
-	server.parserInstantiator = parserInstantiator
 
 	for i := range workerNumber {
-		worker := workerInstantiator(&server, i)
+		worker := workerInstantiator(server.cacheStore, server.connectionChannel, uint64(i))
 		worker.Run()
 	}
 
