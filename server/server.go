@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"miniredis/core/coreinterface"
 	e "miniredis/error"
 	"net"
 	"os"
@@ -12,25 +13,8 @@ import (
 
 type Server struct {
 	listener          net.Listener
-	cacheStore        CacheStore
+	cacheStore        coreinterface.CacheStore
 	connectionChannel chan net.Conn
-}
-
-type Worker interface {
-	Run()
-}
-
-type CacheStore interface {
-	Get(key string) (string, bool)
-	Set(key string, value string) error
-	RPush(key string, args ...string) error
-	RPop(key string) (string, error)
-	LLen(key string) (int, error)
-	LPop(key string) (string, error)
-	LPush(key string, args ...string) error
-	LIndex(key string, index int) (string, bool)
-	Lock()
-	Unlock()
 }
 
 func (s *Server) Accept() error {
@@ -55,8 +39,8 @@ func (s *Server) Run() {
 func MakeServer(
 	ipAddress string,
 	port uint16,
-	cacheStoreInstantiator func() CacheStore,
-	workerInstantiator func(c CacheStore, jobs chan net.Conn, id uint64) Worker,
+	cacheStoreInstantiator func() coreinterface.CacheStore,
+	workerInstantiator func(c coreinterface.CacheStore, jobs chan net.Conn, id uint64) Worker,
 	workerNumber uint,
 	keepAlive uint,
 ) (Server, error) {

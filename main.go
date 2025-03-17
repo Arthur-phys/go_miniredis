@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"miniredis/core/caches"
 	"miniredis/core/parser"
-	"miniredis/core/worker"
 	"miniredis/server"
 )
 
@@ -13,7 +12,7 @@ func main() {
 		"127.0.0.1",
 		8000,
 		caches.NewSimpleCacheStore,
-		worker.NewSimpleWorkerInstantiator(parser.NewRESPParser),
+		server.NewWorkerInstantiator(parser.NewRESPParser),
 		2,
 		15,
 	)

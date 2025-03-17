@@ -2,9 +2,8 @@ package parser
 
 import (
 	"bufio"
-	"miniredis/core/worker"
+	"miniredis/core/coreinterface"
 	e "miniredis/error"
-	"miniredis/server"
 	"net"
 	"strconv"
 )
@@ -13,13 +12,13 @@ type RESPParser struct {
 	stream Stream
 }
 
-func (r *RESPParser) ParseCommand() (f func(d server.CacheStore) ([]byte, error), err error) {
+func (r *RESPParser) ParseCommand() (f func(d coreinterface.CacheStore) ([]byte, error), err error) {
 	firstByte, err := r.stream.TakeOne()
 	if err != nil {
 		return
 	}
 	if firstByte != '*' {
-		return func(d server.CacheStore) ([]byte, error) { return []byte{}, nil }, e.Error{} // Change
+		return func(d coreinterface.CacheStore) ([]byte, error) { return []byte{}, nil }, e.Error{} // Change
 	}
 	bytesRead, err := r.stream.ReadUntilSliceFound([]byte{'\r', '\n'})
 	if err != nil {
@@ -39,13 +38,13 @@ func (r *RESPParser) ParseCommand() (f func(d server.CacheStore) ([]byte, error)
 	return selectFunction(arr)
 }
 
-func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), err error) {
+func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, error), err error) {
 	switch arr[0] {
 	case "GET":
 		if len(arr) != 2 {
 			return // Change proper error handling
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			if val, ok := d.Get(arr[1]); ok {
 				return BlobStringToRESP(val), nil
 			} else {
@@ -56,7 +55,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 		if len(arr) != 3 {
 			return // Change proper error handling
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			err = d.Set(arr[1], arr[2])
 			if err != nil {
 				return []byte{}, err
@@ -67,7 +66,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 		if len(arr) < 3 {
 			return
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			err = d.RPush(arr[1], arr[2:]...)
 			if err != nil {
 				return []byte{}, err //Propper error handling
@@ -78,7 +77,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 		if len(arr) != 2 {
 			return
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			val, err := d.RPop(arr[1])
 			if err != nil {
 				return []byte{}, err // Propper error handling
@@ -89,7 +88,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 		if len(arr) < 3 {
 			return
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			err = d.LPush(arr[1], arr[2:]...)
 			if err != nil {
 				return []byte{}, err //Propper error handling
@@ -100,7 +99,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 		if len(arr) != 2 {
 			return
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			val, err := d.LPop(arr[1])
 			if err != nil {
 				return []byte{}, err // Propper error handling
@@ -111,7 +110,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 		if len(arr) != 2 {
 			return
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			val, err := d.LLen(arr[1])
 			if err != nil {
 				return []byte{}, err // Propper error handling
@@ -122,7 +121,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 		if len(arr) != 3 {
 			return
 		}
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			index, err := strconv.Atoi(arr[2])
 			if err != nil {
 				return []byte{}, err
@@ -134,7 +133,7 @@ func selectFunction(arr []string) (f func(d server.CacheStore) ([]byte, error), 
 			return BlobStringToRESP(val), nil
 		}, nil
 	default:
-		return func(d server.CacheStore) ([]byte, error) {
+		return func(d coreinterface.CacheStore) ([]byte, error) {
 			return ErrToRESP(e.Error{}), nil
 		}, e.Error{}
 	}
@@ -164,6 +163,6 @@ func (r *RESPParser) miniRedisBlobStringFromBytes() (s string, err error) {
 	return string(blobString), nil
 }
 
-func NewRESPParser(conn *net.Conn) worker.Parser {
+func NewRESPParser(conn *net.Conn) coreinterface.Parser {
 	return &RESPParser{Stream{bufio.NewReader(*conn)}}
 }

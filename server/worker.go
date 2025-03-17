@@ -1,36 +1,32 @@
-package worker
+package server
 
 import (
 	"io"
 	"log/slog"
-	"miniredis/server"
+	"miniredis/core/coreinterface"
 	"net"
 )
 
-type SimpleWorker struct {
-	cacheStore        server.CacheStore
-	parseInstantiator func(c *net.Conn) Parser
+type Worker struct {
+	cacheStore        coreinterface.CacheStore
+	parseInstantiator func(c *net.Conn) coreinterface.Parser
 	connectionChannel chan net.Conn
 	id                uint64
 }
 
-type Parser interface {
-	ParseCommand() (func(d server.CacheStore) ([]byte, error), error)
-}
-
-func NewSimpleWorkerInstantiator(
-	parseInstantiator func(c *net.Conn) Parser,
+func NewWorkerInstantiator(
+	parseInstantiator func(c *net.Conn) coreinterface.Parser,
 ) func(
-	cacheStore server.CacheStore,
+	cacheStore coreinterface.CacheStore,
 	connectionChannel chan net.Conn,
 	id uint64,
-) server.Worker {
-	return func(cacheStore server.CacheStore, connectionChannel chan net.Conn, id uint64) server.Worker {
-		return &SimpleWorker{cacheStore, parseInstantiator, connectionChannel, id}
+) Worker {
+	return func(CacheStore coreinterface.CacheStore, connectionChannel chan net.Conn, id uint64) Worker {
+		return Worker{CacheStore, parseInstantiator, connectionChannel, id}
 	}
 }
 
-func (w *SimpleWorker) handleConnection(c *net.Conn) {
+func (w *Worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	parser := w.parseInstantiator(c)
 	for {
@@ -68,7 +64,7 @@ func (w *SimpleWorker) handleConnection(c *net.Conn) {
 	}
 }
 
-func (w *SimpleWorker) Run() {
+func (w *Worker) Run() {
 	slog.Debug("Starting Worker", slog.Uint64("WORKER_ID", w.id))
 	go func() {
 		for {
