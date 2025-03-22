@@ -26,7 +26,10 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	var genericConn net.Conn
 	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"), 33)
 	genericConn = &newConnection
-	newWorker.handleConnection(&genericConn)
+	err := newWorker.handleConnection(&genericConn)
+	if err != nil {
+		t.Errorf("Unexpected error occured! %e", err)
+	}
 	if string(newConnection.writeArr) != "_\r\n" {
 		t.Errorf("Unexpected message received! %v", string(newConnection.writeArr))
 	}

@@ -8,38 +8,51 @@ import (
 
 type RESPParser struct{}
 
-func (r *RESPParser) ParseCommand(b []byte) (f func(d coreinterface.CacheStore) ([]byte, error), err error) {
+func (r *RESPParser) ParseCommand(b []byte) (fs []func(d coreinterface.CacheStore) ([]byte, error), err error) {
 	stream := NewStream(b)
-	firstByte, err := stream.TakeOne()
-	if err != nil {
-		return
-	}
-	if firstByte != '*' {
-		return func(d coreinterface.CacheStore) ([]byte, error) { return []byte{}, nil }, e.Error{} // Change
-	}
-	bytesRead, err := stream.ReadUntilSliceFound([]byte{'\r', '\n'})
-	if err != nil {
-		return
-	}
-	i, err := strconv.Atoi(string(bytesRead))
-	if err != nil {
-		return
-	}
-	arr := make([]string, i)
-	for j := range arr {
-		arr[j], err = r.miniRedisBlobStringFromBytes(&stream)
+	commands := make([]func(d coreinterface.CacheStore) ([]byte, error), 1)
+	var internalParser func() error
+	internalParser = func() error {
+		firstByte, err := stream.TakeOne()
 		if err != nil {
-			return
+			return err
 		}
+		if firstByte != '*' {
+			return e.Error{} // Change
+		}
+		bytesRead, err := stream.ReadUntilSliceFound([]byte{'\r', '\n'})
+		if err != nil {
+			return err
+		}
+		i, err := strconv.Atoi(string(bytesRead))
+		if err != nil {
+			return err
+		}
+		arr := make([]string, i)
+		for j := range arr {
+			arr[j], err = r.miniRedisBlobStringFromBytes(&stream)
+			if err != nil {
+				return err
+			}
+		}
+		f, err := selectFunction(arr)
+		if err != nil {
+			return err
+		}
+		commands = append(commands, f)
+		return internalParser()
 	}
-	return selectFunction(arr)
+
+	internalParser()
+	return commands, nil
 }
 
 func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, error), err error) {
 	switch arr[0] {
 	case "GET":
 		if len(arr) != 2 {
-			return // Change proper error handling
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			if val, ok := d.Get(arr[1]); ok {
@@ -50,7 +63,8 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 		}, nil
 	case "SET":
 		if len(arr) != 3 {
-			return // Change proper error handling
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			err = d.Set(arr[1], arr[2])
@@ -61,7 +75,8 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 		}, nil
 	case "RPUSH":
 		if len(arr) < 3 {
-			return
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			err = d.RPush(arr[1], arr[2:]...)
@@ -72,7 +87,8 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 		}, nil
 	case "RPOP":
 		if len(arr) != 2 {
-			return
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			val, err := d.RPop(arr[1])
@@ -83,7 +99,8 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 		}, nil
 	case "LPUSH":
 		if len(arr) < 3 {
-			return
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			err = d.LPush(arr[1], arr[2:]...)
@@ -94,7 +111,8 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 		}, nil
 	case "LPOP":
 		if len(arr) != 2 {
-			return
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			val, err := d.LPop(arr[1])
@@ -105,7 +123,8 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 		}, nil
 	case "LLEN":
 		if len(arr) != 2 {
-			return
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			val, err := d.LLen(arr[1])
@@ -116,7 +135,8 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 		}, nil
 	case "LINDEX":
 		if len(arr) != 3 {
-			return
+			err = e.Error{}
+			return f, err // Change proper error handling
 		}
 		return func(d coreinterface.CacheStore) ([]byte, error) {
 			index, err := strconv.Atoi(arr[2])
@@ -156,7 +176,10 @@ func (r *RESPParser) miniRedisBlobStringFromBytes(st *Stream) (s string, err err
 	if err != nil {
 		return
 	}
-	st.Skip(2)
+	_, err = st.Skip(2)
+	if err != nil {
+		return
+	}
 	return string(blobString), nil
 }
 

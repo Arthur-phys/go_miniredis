@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"miniredis/core/coreinterface"
@@ -30,10 +31,11 @@ func NewWorkerInstantiator(
 	}
 }
 
-func (w *Worker) handleConnection(c *net.Conn) {
+func (w *Worker) handleConnection(c *net.Conn) error {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	buffer := make([]byte, 10240)
+	lastLoop := false
 
 	for {
 		n, err := (*c).Read(buffer)
@@ -43,43 +45,44 @@ func (w *Worker) handleConnection(c *net.Conn) {
 					slog.Uint64("WORKER_ID", w.id),
 					slog.String("CLIENT", (*c).RemoteAddr().String()),
 				)
-				return
+				return nil
+			} else if err == io.EOF && n != 0 {
+				lastLoop = true
 			} else if e, ok := err.(net.Error); ok {
 				if e.Timeout() {
-					slog.Error("Connection timeout",
+					slog.Error("Connection timedout",
 						slog.Uint64("WORKER_ID", w.id),
 						slog.String("CLIENT", (*c).RemoteAddr().String()),
 					)
 				}
-				return
-			} else if err != io.EOF {
+				return err
+			} else {
 				slog.Error("Unknown error occurred!", "ERROR", err,
 					slog.Uint64("WORKER_ID", w.id),
 					slog.String("CLIENT", (*c).RemoteAddr().String()),
 				)
-				return
+				return err
 			}
 		}
-
 		command, err := w.parser.ParseCommand(buffer[:n])
 		if err != nil {
 			slog.Error("An error occurred while parsing the command", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),
 			)
-			return
+			return err
 		}
 
 		w.cacheStore.Lock()
 		res, err := command(w.cacheStore)
 		w.cacheStore.Unlock()
-
+		fmt.Println("I executed the command!")
 		if err != nil {
-			slog.Error("An error occurred while returning a response to the client", "ERROR", err,
+			slog.Error("An error occurred while executing client's command", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),
 			)
-			return
+			return err
 		}
 		_, err = (*c).Write(res)
 		if err != nil {
@@ -87,10 +90,14 @@ func (w *Worker) handleConnection(c *net.Conn) {
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),
 			)
-			return
+			return err
 		}
-		(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
+		fmt.Println("I sent a response to the client!")
 
+		(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
+		if lastLoop {
+			return nil
+		}
 	}
 }
 
