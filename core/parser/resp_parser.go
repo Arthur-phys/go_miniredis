@@ -1,26 +1,23 @@
 package parser
 
 import (
-	"bufio"
 	"miniredis/core/coreinterface"
 	e "miniredis/error"
-	"net"
 	"strconv"
 )
 
-type RESPParser struct {
-	stream Stream
-}
+type RESPParser struct{}
 
-func (r *RESPParser) ParseCommand() (f func(d coreinterface.CacheStore) ([]byte, error), err error) {
-	firstByte, err := r.stream.TakeOne()
+func (r *RESPParser) ParseCommand(b []byte) (f func(d coreinterface.CacheStore) ([]byte, error), err error) {
+	stream := NewStream(b)
+	firstByte, err := stream.TakeOne()
 	if err != nil {
 		return
 	}
 	if firstByte != '*' {
 		return func(d coreinterface.CacheStore) ([]byte, error) { return []byte{}, nil }, e.Error{} // Change
 	}
-	bytesRead, err := r.stream.ReadUntilSliceFound([]byte{'\r', '\n'})
+	bytesRead, err := stream.ReadUntilSliceFound([]byte{'\r', '\n'})
 	if err != nil {
 		return
 	}
@@ -30,7 +27,7 @@ func (r *RESPParser) ParseCommand() (f func(d coreinterface.CacheStore) ([]byte,
 	}
 	arr := make([]string, i)
 	for j := range arr {
-		arr[j], err = r.miniRedisBlobStringFromBytes()
+		arr[j], err = r.miniRedisBlobStringFromBytes(&stream)
 		if err != nil {
 			return
 		}
@@ -139,15 +136,15 @@ func selectFunction(arr []string) (f func(d coreinterface.CacheStore) ([]byte, e
 	}
 }
 
-func (r *RESPParser) miniRedisBlobStringFromBytes() (s string, err error) {
-	firstByte, err := r.stream.TakeOne()
+func (r *RESPParser) miniRedisBlobStringFromBytes(st *Stream) (s string, err error) {
+	firstByte, err := st.TakeOne()
 	if err != nil {
 		return
 	}
 	if firstByte != '$' {
 		return "", e.Error{} // Change
 	}
-	bytesRead, err := r.stream.ReadUntilSliceFound([]byte{'\r', '\n'})
+	bytesRead, err := st.ReadUntilSliceFound([]byte{'\r', '\n'})
 	if err != nil {
 		return
 	}
@@ -155,14 +152,14 @@ func (r *RESPParser) miniRedisBlobStringFromBytes() (s string, err error) {
 	if err != nil {
 		return
 	}
-	blobString, _, err := r.stream.ReadNBytes(long)
+	blobString, _, err := st.ReadNBytes(long)
 	if err != nil {
 		return
 	}
-	r.stream.Skip(2)
+	st.Skip(2)
 	return string(blobString), nil
 }
 
-func NewRESPParser(conn *net.Conn) coreinterface.Parser {
-	return &RESPParser{Stream{bufio.NewReader(*conn)}}
+func NewRESPParser() coreinterface.Parser {
+	return &RESPParser{}
 }

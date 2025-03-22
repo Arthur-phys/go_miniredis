@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestWorkerhandleConnedction_Should_Return_Message_To_Client_When_Sent_A_Single_One(t *testing.T) {
+func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Single_One(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
@@ -50,6 +50,32 @@ func TestWorkerhandleConnedction_Should_Return_Message_To_Client_When_Sent_Multi
 	}
 }
 
+func TestWorkerhandleConnedction_Should_Return_Message_To_Client_When_Sent_Multiple_In_Different_Packages(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	workerInstantiator := NewWorkerInstantiator(parser.NewRESPParser)
+	cacheStore := caches.NewSimpleCacheStore()
+	channel := make(chan net.Conn)
+	newWorker := workerInstantiator(cacheStore, channel, 1)
+
+	var genericConn net.Conn
+	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"), 33)
+	genericConn = &newConnection
+	newWorker.handleConnection(&genericConn)
+	if string(newConnection.writeArr) != "_\r\n" {
+		t.Errorf("Unexpected message received! %v", string(newConnection.writeArr))
+	}
+	// Second read
+	time.Sleep(time.Second * 2)
+	newConnection.newMessage(fmt.Appendf([]byte{}, "*2\r\n$3\r\nGET\r\n$1\r\nB\r\n"))
+	genericConn = &newConnection
+	newWorker.handleConnection(&genericConn)
+	if string(newConnection.writeArr) != "$7\r\ncrayoli\r\n" {
+		t.Errorf("Unexpected message received! %v", string(newConnection.writeArr))
+	}
+}
+
 type mockConnection struct {
 	bytesArr         []byte
 	writeArr         []byte
@@ -77,6 +103,13 @@ func newMockConnection(bytes []byte, limitBytes int) mockConnection {
 		return len(mc.writeArr), nil
 	}
 	return mockConnection{bytes, []byte{}, 0, limitBytes, read, write}
+}
+
+func (mc *mockConnection) newMessage(message []byte) {
+	mc.bytesArr = message
+	mc.currentBytesRead = 0
+	mc.writeArr = []byte{}
+	mc.limitBytes = len(message)
 }
 
 func (mc *mockConnection) Read(b []byte) (int, error) {

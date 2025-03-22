@@ -40,7 +40,7 @@ func MakeServer(
 	ipAddress string,
 	port uint16,
 	cacheStoreInstantiator func() coreinterface.CacheStore,
-	workerInstantiator func(c coreinterface.CacheStore, jobs chan net.Conn, id uint64) Worker,
+	workerInstantiator func(c coreinterface.CacheStore, jobs chan net.Conn, timeout uint) Worker,
 	workerNumber uint,
 	keepAlive uint,
 ) (Server, error) {
@@ -69,8 +69,8 @@ func MakeServer(
 	server.cacheStore = cacheStoreInstantiator()
 	server.connectionChannel = make(chan net.Conn)
 
-	for i := range workerNumber {
-		worker := workerInstantiator(server.cacheStore, server.connectionChannel, uint64(i))
+	for range workerNumber {
+		worker := workerInstantiator(server.cacheStore, server.connectionChannel, keepAlive)
 		worker.Run()
 	}
 

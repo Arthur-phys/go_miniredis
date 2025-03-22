@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	e "miniredis/error"
 )
@@ -9,6 +10,10 @@ import (
 // Simple wrapper for a bufio.Reader
 type Stream struct {
 	byteReader *bufio.Reader
+}
+
+func NewStream(b []byte) Stream {
+	return Stream{bufio.NewReader(bytes.NewBuffer(b))}
 }
 
 func (s *Stream) ReadUntilFound(delim byte) ([]byte, error) {

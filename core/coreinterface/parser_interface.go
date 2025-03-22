@@ -1,5 +1,5 @@
 package coreinterface
 
 type Parser interface {
-	ParseCommand() (func(d CacheStore) ([]byte, error), error)
+	ParseCommand(buffer []byte) (func(d CacheStore) ([]byte, error), error)
 }
