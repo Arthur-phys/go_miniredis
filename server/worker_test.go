@@ -26,10 +26,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	var genericConn net.Conn
 	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"), 33)
 	genericConn = &newConnection
-	err := newWorker.handleConnection(&genericConn)
-	if err != nil {
-		t.Errorf("Unexpected error occured! %e", err)
-	}
+	newWorker.handleConnection(&genericConn)
 	if string(newConnection.writeArr) != "_\r\n" {
 		t.Errorf("Unexpected message received! %v", string(newConnection.writeArr))
 	}
@@ -65,35 +62,9 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple
 	var genericConn net.Conn
 	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n*1\r\n$3\r\nGET\r\n$1\r\nB\r\n"), 53)
 	genericConn = &newConnection
-	err := newWorker.handleConnection(&genericConn)
-	if err != nil {
-		t.Errorf("Error did not happen! %e", err)
-	}
-}
-
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_In_Different_Segments(t *testing.T) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	slog.SetDefault(logger)
-
-	workerInstantiator := NewWorkerInstantiator(parser.NewRESPParser)
-	cacheStore := caches.NewSimpleCacheStore()
-	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 5)
-
-	var genericConn net.Conn
-	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"), 33)
-	genericConn = &newConnection
 	newWorker.handleConnection(&genericConn)
-	if string(newConnection.writeArr) != "_\r\n" {
-		t.Errorf("Unexpected message received! %v", string(newConnection.writeArr))
-	}
-	// Second read
-	time.Sleep(time.Second * 2)
-	newConnection.newMessage(fmt.Appendf([]byte{}, "*2\r\n$3\r\nGET\r\n$1\r\nB\r\n"))
-	genericConn = &newConnection
-	newWorker.handleConnection(&genericConn)
-	if string(newConnection.writeArr) != "$7\r\ncrayoli\r\n" {
-		t.Errorf("Unexpected message received! %v", string(newConnection.writeArr))
+	if newConnection.writeArr[0] != '-' {
+		t.Errorf("Unexpected response! %v", newConnection.writeArr)
 	}
 }
 

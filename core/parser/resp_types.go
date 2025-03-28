@@ -1,6 +1,9 @@
 package parser
 
-import "fmt"
+import (
+	"fmt"
+	e "miniredis/error"
+)
 
 func BlobStringToRESP(s string) []byte {
 	return fmt.Appendf([]byte{'$'}, fmt.Sprintf("%d\r\n%v\r\n", len(s), s))
@@ -14,6 +17,6 @@ func NullToRESP() []byte {
 	return []byte{'_', '\r', '\n'}
 }
 
-func ErrToRESP(err error) []byte {
-	return fmt.Appendf([]byte{'-'}, fmt.Sprintf("%v\r\n", err))
+func ErrToRESP(err e.Error) []byte {
+	return fmt.Appendf([]byte{'-'}, fmt.Sprintf("%v\r\n", err.ClientContext))
 }
