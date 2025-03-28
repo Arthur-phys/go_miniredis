@@ -35,7 +35,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	}
 }
 
-func TestWorkerhandleConnedction_Should_Return_Message_To_Client_When_Sent_Multiple_In_A_Single_Package(t *testing.T) {
+func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_In_A_Single_Package(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -53,7 +53,7 @@ func TestWorkerhandleConnedction_Should_Return_Message_To_Client_When_Sent_Multi
 	}
 }
 
-func TestWorkerhandleConnedction_Should_Return_Message_To_Client_When_Sent_Multiple_In_Different_Packages(t *testing.T) {
+func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple_Commands_With_One_Wrong(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -61,6 +61,24 @@ func TestWorkerhandleConnedction_Should_Return_Message_To_Client_When_Sent_Multi
 	cacheStore := caches.NewSimpleCacheStore()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 1)
+
+	var genericConn net.Conn
+	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n*1\r\n$3\r\nGET\r\n$1\r\nB\r\n"), 53)
+	genericConn = &newConnection
+	err := newWorker.handleConnection(&genericConn)
+	if err != nil {
+		t.Errorf("Error did not happen! %e", err)
+	}
+}
+
+func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_In_Different_Segments(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	workerInstantiator := NewWorkerInstantiator(parser.NewRESPParser)
+	cacheStore := caches.NewSimpleCacheStore()
+	channel := make(chan net.Conn)
+	newWorker := workerInstantiator(cacheStore, channel, 5)
 
 	var genericConn net.Conn
 	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"), 33)

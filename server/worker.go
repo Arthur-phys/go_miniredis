@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"miniredis/core/coreinterface"
@@ -31,13 +30,14 @@ func NewWorkerInstantiator(
 	}
 }
 
-func (w *Worker) handleConnection(c *net.Conn) error {
+func (w *Worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	buffer := make([]byte, 10240)
 	lastLoop := false
 
 	for {
+		finalResponse := []byte{}
 		n, err := (*c).Read(buffer)
 		if err != nil {
 			if err == io.EOF && n == 0 {
@@ -45,7 +45,7 @@ func (w *Worker) handleConnection(c *net.Conn) error {
 					slog.Uint64("WORKER_ID", w.id),
 					slog.String("CLIENT", (*c).RemoteAddr().String()),
 				)
-				return nil
+				return
 			} else if err == io.EOF && n != 0 {
 				lastLoop = true
 			} else if e, ok := err.(net.Error); ok {
@@ -64,8 +64,8 @@ func (w *Worker) handleConnection(c *net.Conn) error {
 				return err
 			}
 		}
-		command, err := w.parser.ParseCommand(buffer[:n])
-		if err != nil {
+		commands, newErr := w.parser.ParseCommand(buffer[:n])
+		if newErr.Code != 0 {
 			slog.Error("An error occurred while parsing the command", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),
@@ -73,18 +73,20 @@ func (w *Worker) handleConnection(c *net.Conn) error {
 			return err
 		}
 
-		w.cacheStore.Lock()
-		res, err := command(w.cacheStore)
-		w.cacheStore.Unlock()
-		fmt.Println("I executed the command!")
-		if err != nil {
-			slog.Error("An error occurred while executing client's command", "ERROR", err,
-				slog.Uint64("WORKER_ID", w.id),
-				slog.String("CLIENT", (*c).RemoteAddr().String()),
-			)
-			return err
+		for _, command := range commands {
+			w.cacheStore.Lock()
+			res, err := command(w.cacheStore)
+			finalResponse = append(finalResponse, res...)
+			w.cacheStore.Unlock()
+			if err.Code != 0 {
+				slog.Error("An error occurred while executing client's command", "ERROR", err,
+					slog.Uint64("WORKER_ID", w.id),
+					slog.String("CLIENT", (*c).RemoteAddr().String()),
+				)
+				return err
+			}
 		}
-		_, err = (*c).Write(res)
+		_, err = (*c).Write(finalResponse)
 		if err != nil {
 			slog.Error("An error occurred while returning a response to the client", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
@@ -92,7 +94,6 @@ func (w *Worker) handleConnection(c *net.Conn) error {
 			)
 			return err
 		}
-		fmt.Println("I sent a response to the client!")
 
 		(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 		if lastLoop {

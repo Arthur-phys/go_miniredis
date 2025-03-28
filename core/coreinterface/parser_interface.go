@@ -1,5 +1,9 @@
 package coreinterface
 
+import (
+	e "miniredis/error"
+)
+
 type Parser interface {
-	ParseCommand(buffer []byte) ([]func(d CacheStore) ([]byte, error), error)
+	ParseCommand(buffer []byte) ([]func(d CacheStore) ([]byte, e.Error), e.Error)
 }

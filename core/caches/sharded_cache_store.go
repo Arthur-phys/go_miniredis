@@ -2,6 +2,7 @@ package caches
 
 import (
 	"miniredis/core/coreinterface"
+	e "miniredis/error"
 	"sync"
 )
 
@@ -19,36 +20,36 @@ func NewShardedCacheStore() coreinterface.CacheStore {
 	}
 }
 
-func (c *ShardedCacheStore) Get(key string) (string, bool) {
-	return "", true
+func (c *ShardedCacheStore) Get(key string) (string, e.Error) {
+	return "", e.Error{}
 }
 
-func (c *ShardedCacheStore) Set(key string, value string) error {
-	return nil
+func (c *ShardedCacheStore) Set(key string, value string) e.Error {
+	return e.Error{}
 }
 
-func (c *ShardedCacheStore) RPush(key string, args ...string) error {
-	return nil
+func (c *ShardedCacheStore) RPush(key string, args ...string) e.Error {
+	return e.Error{}
 }
 
-func (c *ShardedCacheStore) RPop(key string) (string, error) {
-	return "", nil
+func (c *ShardedCacheStore) RPop(key string) (string, e.Error) {
+	return "", e.Error{}
 }
 
-func (c *ShardedCacheStore) LPush(key string, args ...string) error {
-	return nil
+func (c *ShardedCacheStore) LPush(key string, args ...string) e.Error {
+	return e.Error{}
 }
 
-func (c *ShardedCacheStore) LPop(key string) (string, error) {
-	return "", nil
+func (c *ShardedCacheStore) LPop(key string) (string, e.Error) {
+	return "", e.Error{}
 }
 
-func (c *ShardedCacheStore) LIndex(key string, index int) (string, bool) {
-	return "", true
+func (c *ShardedCacheStore) LIndex(key string, index int) (string, e.Error) {
+	return "", e.Error{}
 }
 
-func (c *ShardedCacheStore) LLen(key string) (int, error) {
-	return 1, nil
+func (c *ShardedCacheStore) LLen(key string) (int, e.Error) {
+	return 1, e.Error{}
 }
 
 func (c *ShardedCacheStore) Lock() {
