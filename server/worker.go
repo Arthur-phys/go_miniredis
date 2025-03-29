@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"miniredis/core/coreinterface"
@@ -63,7 +62,6 @@ func (w *Worker) handleConnection(c *net.Conn) {
 				return
 			}
 		}
-		fmt.Printf("THis is the buffer %v", string(buffer[:n]))
 		commands, newErr := w.parser.ParseCommand(buffer[:n])
 		if newErr.Code != 0 {
 			slog.Error("An error occurred while parsing the command", "ERROR", newErr,
@@ -108,7 +106,6 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			)
 			return
 		}
-		fmt.Println("I was able to finish!")
 
 		(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	}

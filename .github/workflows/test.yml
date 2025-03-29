@@ -1,0 +1,23 @@
+name: Simple test & security checking
+on: [push, pull_request]
+
+jobs:
+    test:
+        runs-on: ubuntu-latest  # Free Linux runner
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+        
+        - name: Set up Go
+          uses: actions/setup-go@v4
+          with:
+            go-version: '1.24.1'
+
+        - name: Run unit tests
+          run: go test -v ./...
+
+        - name: Install gosec
+          run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+        - name: Run security scan
+          run: gosec -exclude=G104 ./...
