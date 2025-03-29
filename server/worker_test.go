@@ -28,7 +28,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	genericConn = &newConnection
 	newWorker.handleConnection(&genericConn)
 	if string(newConnection.writeArr) != "_\r\n" {
-		t.Errorf("Unexpected message received! %v", string(newConnection.writeArr))
+		t.Errorf("Unexpected message received! %v - %v", string(newConnection.writeArr), newConnection.writeArr)
 	}
 }
 
@@ -95,13 +95,6 @@ func newMockConnection(bytes []byte, limitBytes int) mockConnection {
 		return len(mc.writeArr), nil
 	}
 	return mockConnection{bytes, []byte{}, 0, limitBytes, read, write}
-}
-
-func (mc *mockConnection) newMessage(message []byte) {
-	mc.bytesArr = message
-	mc.currentBytesRead = 0
-	mc.writeArr = []byte{}
-	mc.limitBytes = len(message)
 }
 
 func (mc *mockConnection) Read(b []byte) (int, error) {

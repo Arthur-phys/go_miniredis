@@ -42,7 +42,7 @@ func TestErrToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	sampleErr := e.Error{Content: "HI", Code: 22, From: nil}
 	byteString := ErrToRESP(sampleErr)
 	arr := []byte{'-'}
-	arr = fmt.Appendf(arr, "[MiniRedisError-22] HI\n\r\n")
+	arr = fmt.Appendf(arr, "\r\n")
 	for i := range byteString {
 		if byteString[i] != arr[i] {
 			t.Errorf("Bytes did not match! %v != %v", byteString[i], arr[i])

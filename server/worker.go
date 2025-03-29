@@ -35,7 +35,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	buffer := make([]byte, 10240)
-
+	lastLoop := false
 	for {
 		finalResponse := []byte{}
 		n, err := (*c).Read(buffer)
@@ -46,6 +46,8 @@ func (w *Worker) handleConnection(c *net.Conn) {
 					slog.String("CLIENT", (*c).RemoteAddr().String()),
 				)
 				return
+			} else if err == io.EOF && n != 0 {
+				lastLoop = true
 			} else if e, ok := err.(net.Error); ok {
 				if e.Timeout() {
 					slog.Error("Connection timedout",
@@ -107,6 +109,9 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			return
 		}
 
+		if lastLoop {
+			return
+		}
 		(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	}
 }
