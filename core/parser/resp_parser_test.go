@@ -38,9 +38,17 @@ func Test_ParseCommand_Should_Not_Return_Err_When_Passed_Valid_Command_As_Bytes(
 	}
 }
 
-func Test_ParseCommand_Should_Return_Err_When_Passed_Invalid_Command_As_Bytes(t *testing.T) {
+func Test_ParseCommand_Should_Return_Err_When_Passed_Smaller_Command_As_Bytes(t *testing.T) {
 	parser := RESPParser{}
 	_, err := parser.ParseCommand(fmt.Appendf([]byte{}, "*3\r\n$3\r\nGET\r\n$1\r\nB\r\n"))
+	if err.Code == 0 {
+		t.Errorf("Error did not happen!")
+	}
+}
+
+func Test_ParseCommand_Should_Return_Err_When_Passed_Bigger_Array_Command_As_Bytes(t *testing.T) {
+	parser := RESPParser{}
+	_, err := parser.ParseCommand(fmt.Appendf([]byte{}, "*2\r\n$3\r\nGET\r\n$1\r\nB\r\n$1\r\nB\r\n"))
 	if err.Code == 0 {
 		t.Errorf("Error did not happen!")
 	}
