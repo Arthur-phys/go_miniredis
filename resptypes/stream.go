@@ -1,4 +1,4 @@
-package parser
+package resptypes
 
 import (
 	"bufio"

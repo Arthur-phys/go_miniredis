@@ -1,9 +1,9 @@
 package caches
 
 import (
+	"fmt"
 	"miniredis/core/coreinterface"
 	e "miniredis/error"
-	"strconv"
 	"sync"
 )
 
@@ -89,7 +89,7 @@ func (c *SimpleCacheStore) LIndex(key string, index int) (string, e.Error) {
 		return v[index], e.Error{}
 	} else if len(v) > index || index < 0 {
 		err := e.IndexOutOfRange
-		err.ExtraContext = map[string]string{"index": strconv.Itoa(index)}
+		err.ExtraContext = map[string]string{"index": fmt.Sprintf("%d", index)}
 		return "", err
 	} else {
 		err := e.KeyNotFoundInDictionary

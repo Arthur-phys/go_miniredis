@@ -16,6 +16,8 @@ var (
 	InsufficientLength             = Error{"Insufficient length for command", "Command malformed", 8, nil, make(map[string]string)}
 	UnableToConvertIndexToInt      = Error{"Unable to convert the provided index to an integer", "", 9, nil, make(map[string]string)}
 	FunctionNotFound               = Error{"Function provided not found for current implementation", "Command not found", 9, nil, make(map[string]string)}
+	UnexpectedBytes                = Error{"Unexpected bytes encountered while processing byte sequence", "", 10, nil, make(map[string]string)}
+	ErrorReceived                  = Error{"Error received as a response", "", 11, nil, make(map[string]string)}
 )
 
 type Error struct {

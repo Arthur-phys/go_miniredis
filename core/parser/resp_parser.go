@@ -5,6 +5,7 @@ import (
 	"io"
 	"miniredis/core/coreinterface"
 	e "miniredis/error"
+	rt "miniredis/resptypes"
 	"strconv"
 )
 
@@ -12,7 +13,7 @@ type RESPParser struct{}
 
 func (r *RESPParser) ParseCommand(b []byte) ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
 	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
-	stream := NewStream(b)
+	stream := rt.NewStream(b)
 	var internalParser func() e.Error
 	internalParser = func() e.Error {
 		var newErr e.Error
@@ -45,7 +46,7 @@ func (r *RESPParser) ParseCommand(b []byte) ([]func(d coreinterface.CacheStore) 
 		}
 		arr := make([]string, i)
 		for j := range arr {
-			arr[j], newErr = r.miniRedisBlobStringFromBytes(&stream)
+			arr[j], newErr = rt.BlobStringFromBytes(&stream)
 			if newErr.Code != 0 {
 				return newErr
 			}
@@ -190,47 +191,6 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 		newErr.ExtraContext["function"] = arr[0]
 		return f, newErr
 	}
-}
-
-func (r *RESPParser) miniRedisBlobStringFromBytes(st *Stream) (string, e.Error) {
-	firstByte, err := st.TakeOne()
-	if err != nil {
-		newErr := e.UnableToReadFirstByte
-		newErr.From = err
-		return "", newErr
-	}
-	if firstByte != '$' {
-		newErr := e.UnexpectedFirstByte
-		newErr.ExtraContext["expected"] = "$"
-		newErr.ExtraContext["received"] = string(firstByte)
-		return "", newErr
-	}
-	bytesRead, err := st.ReadUntilSliceFound([]byte{'\r', '\n'})
-	if err != nil {
-		newErr := e.UnableToFindPattern
-		newErr.From = err
-		newErr.ExtraContext["pattern"] = `\r\n`
-		return "", newErr
-	}
-	long, err := strconv.Atoi(string(bytesRead))
-	if err != nil {
-		newErr := e.UnableToDetermineBulkArraySize
-		newErr.From = err
-		return "", newErr
-	}
-	blobString, _, err := st.ReadNBytes(long)
-	if err != nil {
-		newErr := e.UnableToReadBytes
-		newErr.From = err
-		return "", newErr
-	}
-	_, err = st.Skip(2)
-	if err != nil {
-		newErr := e.UnableToReadBytes
-		newErr.From = err
-		return "", newErr
-	}
-	return string(blobString), e.Error{}
 }
 
 func NewRESPParser() coreinterface.Parser {
