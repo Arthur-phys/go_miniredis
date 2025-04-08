@@ -18,6 +18,7 @@ var (
 	FunctionNotFound               = Error{"Function provided not found for current implementation", "Command not found", 9, nil, make(map[string]string)}
 	UnexpectedBytes                = Error{"Unexpected bytes encountered while processing byte sequence", "", 10, nil, make(map[string]string)}
 	ErrorReceived                  = Error{"Error received as a response", "", 11, nil, make(map[string]string)}
+	UnableToConvertLenToInt        = Error{"Unable to convert the given response to an integer representing length of array", "", 12, nil, make(map[string]string)}
 )
 
 type Error struct {

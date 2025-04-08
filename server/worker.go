@@ -4,7 +4,7 @@ import (
 	"io"
 	"log/slog"
 	"miniredis/core/coreinterface"
-	p "miniredis/core/parser"
+	rt "miniredis/resptypes"
 	"net"
 	"time"
 )
@@ -70,7 +70,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),
 			)
-			_, err = (*c).Write(p.ErrToRESP(newErr))
+			_, err = (*c).Write(rt.ErrToBytes(newErr))
 			if err != nil {
 				slog.Error("An error occurred while sending error response to client", "ERROR", err,
 					slog.Uint64("WORKER_ID", w.id),
@@ -90,7 +90,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 					slog.Uint64("WORKER_ID", w.id),
 					slog.String("CLIENT", (*c).RemoteAddr().String()),
 				)
-				_, err := (*c).Write(p.ErrToRESP(newErr))
+				_, err := (*c).Write(rt.ErrToBytes(newErr))
 				if err != nil {
 					slog.Error("An error occurred while sending error response to client", "ERROR", err,
 						slog.Uint64("WORKER_ID", w.id),

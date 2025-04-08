@@ -76,7 +76,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 		}
 		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
 			if val, err := d.Get(arr[1]); err.Code == 0 {
-				return BlobStringToRESP(val), e.Error{}
+				return rt.BlobStringToBytes(val), e.Error{}
 			} else {
 				return []byte{}, err
 			}
@@ -93,7 +93,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			if err.Code != 0 {
 				return []byte{}, err
 			}
-			return NullToRESP(), e.Error{}
+			return rt.NullToBytes(), e.Error{}
 		}, e.Error{}
 	case "RPUSH":
 		if len(arr) < 3 {
@@ -107,7 +107,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			if err.Code != 0 {
 				return []byte{}, err
 			}
-			return NullToRESP(), e.Error{}
+			return rt.NullToBytes(), e.Error{}
 		}, e.Error{}
 	case "RPOP":
 		if len(arr) != 2 {
@@ -121,7 +121,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			if err.Code != 0 {
 				return []byte{}, err
 			}
-			return BlobStringToRESP(val), e.Error{}
+			return rt.BlobStringToBytes(val), e.Error{}
 		}, e.Error{}
 	case "LPUSH":
 		if len(arr) < 3 {
@@ -135,7 +135,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			if err.Code != 0 {
 				return []byte{}, err
 			}
-			return NullToRESP(), e.Error{}
+			return rt.NullToBytes(), e.Error{}
 		}, e.Error{}
 	case "LPOP":
 		if len(arr) != 2 {
@@ -149,7 +149,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			if err.Code != 0 {
 				return []byte{}, err // Propper error handling
 			}
-			return BlobStringToRESP(val), e.Error{}
+			return rt.BlobStringToBytes(val), e.Error{}
 		}, e.Error{}
 	case "LLEN":
 		if len(arr) != 2 {
@@ -163,7 +163,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			if err.Code != 0 {
 				return []byte{}, err
 			}
-			return IntToRESP(val), e.Error{}
+			return rt.IntToBytes(val), e.Error{}
 		}, e.Error{}
 	case "LINDEX":
 		if len(arr) != 3 {
@@ -184,7 +184,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			if newErr.Code != 0 {
 				return []byte{}, newErr
 			}
-			return BlobStringToRESP(val), e.Error{}
+			return rt.BlobStringToBytes(val), e.Error{}
 		}, e.Error{}
 	default:
 		newErr := e.FunctionNotFound

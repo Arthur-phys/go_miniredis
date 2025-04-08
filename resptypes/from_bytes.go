@@ -88,3 +88,32 @@ func ErrorFromBytes(st *Stream) e.Error {
 		return newErr
 	}
 }
+
+func UIntFromBytes(st *Stream) (int, e.Error) {
+	firstByte, err := st.TakeOne()
+	if err != nil {
+		newErr := e.UnableToReadFirstByte
+		newErr.From = err
+		return 0, newErr
+	}
+	if firstByte != ':' {
+		newErr := e.UnexpectedFirstByte
+		newErr.ExtraContext["expected"] = ":"
+		newErr.ExtraContext["received"] = string(firstByte)
+		return 0, newErr
+	}
+	bytesRead, err := st.ReadUntilSliceFound([]byte{'\r', '\n'})
+	if err != nil {
+		newErr := e.UnableToFindPattern
+		newErr.From = err
+		newErr.ExtraContext["pattern"] = `\r\n`
+		return 0, newErr
+	}
+	num, err := strconv.Atoi(string(bytesRead))
+	if err != nil {
+		newErr := e.UnableToConvertLenToInt
+		newErr.From = err
+		return 0, newErr
+	}
+	return num, e.Error{}
+}

@@ -1,4 +1,4 @@
-package parser
+package resptypes
 
 import (
 	"fmt"
@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func TestBlobStringToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
+func TestBlobStringToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	sampleStr := "a samplë"
-	byteString := BlobStringToRESP(sampleStr)
+	byteString := BlobStringToBytes(sampleStr)
 	arr := []byte{'$', '9', '\r', '\n', 'a', ' ', 's', 'a', 'm', 'p', 'l', 195, 171, '\r', '\n'}
 	for i := range byteString {
 		if byteString[i] != arr[i] {
@@ -17,9 +17,9 @@ func TestBlobStringToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	}
 }
 
-func TestIntToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
+func TestIntToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	sampleInt := -43
-	byteString := IntToRESP(sampleInt)
+	byteString := IntToBytes(sampleInt)
 	arr := []byte{':', '-', '4', '3', '\r', '\n'}
 	for i := range byteString {
 		if byteString[i] != arr[i] {
@@ -28,8 +28,8 @@ func TestIntToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	}
 }
 
-func TestNullToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
-	byteString := NullToRESP()
+func TestNullToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
+	byteString := NullToBytes()
 	arr := []byte{'_', '\r', '\n'}
 	for i := range byteString {
 		if byteString[i] != arr[i] {
@@ -38,9 +38,9 @@ func TestNullToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	}
 }
 
-func TestErrToRESP_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
+func TestErrToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	sampleErr := e.Error{Content: "HI", Code: 22, From: nil}
-	byteString := ErrToRESP(sampleErr)
+	byteString := ErrToBytes(sampleErr)
 	arr := []byte{'-'}
 	arr = fmt.Appendf(arr, "\r\n")
 	for i := range byteString {

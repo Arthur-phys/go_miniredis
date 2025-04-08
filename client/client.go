@@ -2,18 +2,20 @@ package client
 
 import (
 	"io"
+	e "miniredis/error"
+	rt "miniredis/resptypes"
 	"net"
 )
 
 type Sender interface {
-	get(key string) ([]byte, func([]byte) (string, error))
-	set(key string, value string) ([]byte, func([]byte) error)
-	rPush(key string, args ...string) ([]byte, func([]byte) error)
-	rPop(key string) ([]byte, func([]byte) (string, error))
-	lLen(key string) ([]byte, func([]byte) (uint, error))
-	lPop(key string) ([]byte, func([]byte) (string, error))
-	lPush(key string, args ...string) ([]byte, func([]byte) error)
-	lIndex(key string, index int) ([]byte, func([]byte) (string, error))
+	get(key string) ([]byte, func(s *rt.Stream) (string, e.Error))
+	set(key string, value string) ([]byte, func(s *rt.Stream) e.Error)
+	rPush(key string, args ...string) ([]byte, func(s *rt.Stream) e.Error)
+	rPop(key string) ([]byte, func(s *rt.Stream) (string, e.Error))
+	lLen(key string) ([]byte, func(s *rt.Stream) (int, e.Error))
+	lPop(key string) ([]byte, func(s *rt.Stream) (string, e.Error))
+	lPush(key string, args ...string) ([]byte, func(s *rt.Stream) e.Error)
+	lIndex(key string, index int) ([]byte, func(s *rt.Stream) (string, e.Error))
 }
 
 type Client struct {
@@ -25,99 +27,88 @@ func NewClient(conn *net.Conn, sender Sender) Client {
 	return Client{conn, sender}
 }
 
-func (client *Client) Get(key string) (string, error) {
+func (client *Client) Get(key string) (string, e.Error) {
 	bytes, checker := client.sender.get(key)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
+	if err.Code != 0 {
 		return "", err
 	}
-	return checker(returnBytes)
+
+	return checker(&returnBytes)
 }
 
-func (client *Client) Set(key string, value string) error {
+func (client *Client) Set(key string, value string) e.Error {
 	bytes, checker := client.sender.set(key, value)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
+	if err.Code != 0 {
 		return err
 	}
-	return checker(returnBytes)
+	return checker(&returnBytes)
 }
 
-func (client *Client) RPush(key string, args ...string) error {
+func (client *Client) RPush(key string, args ...string) e.Error {
 	bytes, checker := client.sender.rPush(key, args...)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
+	if err.Code != 0 {
 		return err
 	}
-	return checker(returnBytes)
+	return checker(&returnBytes)
 }
 
-func (client *Client) RPop(key string) (string, error) {
+func (client *Client) RPop(key string) (string, e.Error) {
 	bytes, checker := client.sender.rPop(key)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
+	if err.Code != 0 {
 		return "", err
 	}
-	return checker(returnBytes)
+	return checker(&returnBytes)
 }
 
-func (client *Client) LLen(key string) (uint, error) {
+func (client *Client) LLen(key string) (int, e.Error) {
 	bytes, checker := client.sender.lLen(key)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
-		return 0, err
+	if err.Code != 0 {
+		return 0, e.Error{}
 	}
-	return checker(returnBytes)
+	return checker(&returnBytes)
 }
 
-func (client *Client) LPop(key string) (string, error) {
+func (client *Client) LPop(key string) (string, e.Error) {
 	bytes, checker := client.sender.lPop(key)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
+	if err.Code != 0 {
 		return "", err
 	}
-	return checker(returnBytes)
+	return checker(&returnBytes)
 }
 
-func (client *Client) LPush(key string, args ...string) error {
+func (client *Client) LPush(key string, args ...string) e.Error {
 	bytes, checker := client.sender.lPush(key, args...)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
+	if err.Code != 0 {
 		return err
 	}
-	return checker(returnBytes)
+	return checker(&returnBytes)
 }
 
-func (client *Client) LIndex(key string, index int) (string, error) {
+func (client *Client) LIndex(key string, index int) (string, e.Error) {
 	bytes, checker := client.sender.lIndex(key, index)
 	returnBytes, err := client.sendAndRead(bytes)
-	if err != nil {
+	if err.Code != 0 {
 		return "", err
 	}
-	return checker(returnBytes)
+	return checker(&returnBytes)
 }
 
-func (client *Client) sendAndRead(bytes []byte) ([]byte, error) {
-	returnBytes := []byte{}
+func (client *Client) sendAndRead(bytes []byte) (rt.Stream, e.Error) {
 	_, err := (*client.conn).Write(bytes)
 	if err != nil {
-		return []byte{}, err
+		return rt.NewStream([]byte{}), e.Error{}
 	}
-	totalBytesRead := 0
-	for {
-		tmpBytes := make([]byte, 1024)
-		n, err := (*client.conn).Read(tmpBytes)
-		totalBytesRead += n
-		if err == io.EOF && n == 0 {
-			break
-		} else if (err == io.EOF && n != 0) || err == nil {
-			returnBytes = append(returnBytes, tmpBytes...)
-		} else {
-			return []byte{}, err
-		}
-		if totalBytesRead > 10240 {
-			return []byte{}, err // Custom error must replace this
-		}
+	returnBytes := make([]byte, 10240)
+	_, err = (*client.conn).Read(returnBytes)
+	if err != io.EOF && err != nil {
+		return rt.NewStream([]byte{}), e.Error{}
 	}
-	return returnBytes, nil
+	return rt.NewStream(returnBytes), e.Error{}
 }
