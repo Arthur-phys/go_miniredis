@@ -1,31 +1,32 @@
 package client
 
 import (
-	"fmt"
+	"bufio"
+	"bytes"
 	"io"
 	e "miniredis/error"
-	rt "miniredis/resptypes"
 	"net"
 )
 
 type Sender interface {
-	get(key string) ([]byte, func(s *rt.Stream) (string, e.Error))
-	set(key string, value string) ([]byte, func(s *rt.Stream) e.Error)
-	rPush(key string, args ...string) ([]byte, func(s *rt.Stream) e.Error)
-	rPop(key string) ([]byte, func(s *rt.Stream) (string, e.Error))
-	lLen(key string) ([]byte, func(s *rt.Stream) (int, e.Error))
-	lPop(key string) ([]byte, func(s *rt.Stream) (string, e.Error))
-	lPush(key string, args ...string) ([]byte, func(s *rt.Stream) e.Error)
-	lIndex(key string, index int) ([]byte, func(s *rt.Stream) (string, e.Error))
+	get(key string) ([]byte, func(s *bufio.Reader) (string, e.Error))
+	set(key string, value string) ([]byte, func(s *bufio.Reader) e.Error)
+	rPush(key string, args ...string) ([]byte, func(s *bufio.Reader) e.Error)
+	rPop(key string) ([]byte, func(s *bufio.Reader) (string, e.Error))
+	lLen(key string) ([]byte, func(s *bufio.Reader) (int, e.Error))
+	lPop(key string) ([]byte, func(s *bufio.Reader) (string, e.Error))
+	lPush(key string, args ...string) ([]byte, func(s *bufio.Reader) e.Error)
+	lIndex(key string, index int) ([]byte, func(s *bufio.Reader) (string, e.Error))
 }
 
 type Client struct {
 	conn   *net.Conn
+	buffer *bufio.Reader
 	sender Sender
 }
 
 func NewClient(conn *net.Conn, sender Sender) Client {
-	return Client{conn, sender}
+	return Client{conn, bufio.NewReader(*conn), sender}
 }
 
 func (client *Client) Get(key string) (string, e.Error) {
@@ -34,8 +35,7 @@ func (client *Client) Get(key string) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
 func (client *Client) Set(key string, value string) e.Error {
@@ -44,7 +44,7 @@ func (client *Client) Set(key string, value string) e.Error {
 	if err.Code != 0 {
 		return err
 	}
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
 func (client *Client) RPush(key string, args ...string) e.Error {
@@ -53,7 +53,7 @@ func (client *Client) RPush(key string, args ...string) e.Error {
 	if err.Code != 0 {
 		return err
 	}
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
 func (client *Client) RPop(key string) (string, e.Error) {
@@ -62,7 +62,7 @@ func (client *Client) RPop(key string) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
 func (client *Client) LLen(key string) (int, e.Error) {
@@ -71,7 +71,7 @@ func (client *Client) LLen(key string) (int, e.Error) {
 	if err.Code != 0 {
 		return 0, e.Error{}
 	}
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
 func (client *Client) LPop(key string) (string, e.Error) {
@@ -80,7 +80,7 @@ func (client *Client) LPop(key string) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
 func (client *Client) LPush(key string, args ...string) e.Error {
@@ -89,7 +89,7 @@ func (client *Client) LPush(key string, args ...string) e.Error {
 	if err.Code != 0 {
 		return err
 	}
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
 func (client *Client) LIndex(key string, index int) (string, e.Error) {
@@ -98,19 +98,18 @@ func (client *Client) LIndex(key string, index int) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-	return checker(&returnBytes)
+	return checker(returnBytes)
 }
 
-func (client *Client) sendAndRead(bytes []byte) (rt.Stream, e.Error) {
-	_, err := (*client.conn).Write(bytes)
+func (client *Client) sendAndRead(b []byte) (*bufio.Reader, e.Error) {
+	_, err := (*client.conn).Write(b)
 	if err != nil {
-		return rt.NewStream([]byte{}), e.Error{}
+		return bufio.NewReader(bytes.NewReader([]byte{})), e.Error{}
 	}
-	returnBytes := make([]byte, 10240)
-	_, err = (*client.conn).Read(returnBytes)
-	fmt.Printf("Came back from reading bytes: %v\r\n", string(returnBytes))
+	returnBytes := make([]byte, 1024)
+	n, err := (*client.buffer).Read(returnBytes)
 	if err != io.EOF && err != nil {
-		return rt.NewStream([]byte{}), e.Error{}
+		return bufio.NewReader(bytes.NewReader([]byte{})), e.Error{}
 	}
-	return rt.NewStream(returnBytes), e.Error{}
+	return bufio.NewReader(bytes.NewReader(returnBytes[:n])), e.Error{}
 }

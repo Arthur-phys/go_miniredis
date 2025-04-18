@@ -1,14 +1,14 @@
 package resptypes
 
-// More than meets the eye !!!
-
 import (
+	"bufio"
+	"io"
 	e "miniredis/error"
 	"strconv"
 )
 
-func BlobStringFromBytes(st *Stream) (string, e.Error) {
-	firstByte, err := st.TakeOne()
+func BlobStringFromBytes(st *bufio.Reader) (string, e.Error) {
+	firstByte, err := st.ReadByte()
 	if err != nil {
 		newErr := e.UnableToReadFirstByte
 		newErr.From = err
@@ -20,11 +20,12 @@ func BlobStringFromBytes(st *Stream) (string, e.Error) {
 		newErr.ExtraContext["received"] = string(firstByte)
 		return "", newErr
 	}
-	bytesRead, err := st.ReadUntilSliceFound([]byte{'\r', '\n'})
+	bytesRead, err := st.ReadBytes('\n')
+	bytesRead = bytesRead[:len(bytesRead)-2]
 	if err != nil {
 		newErr := e.UnableToFindPattern
 		newErr.From = err
-		newErr.ExtraContext["pattern"] = `\r\n`
+		newErr.ExtraContext["pattern"] = `\n`
 		return "", newErr
 	}
 	long, err := strconv.Atoi(string(bytesRead))
@@ -33,13 +34,14 @@ func BlobStringFromBytes(st *Stream) (string, e.Error) {
 		newErr.From = err
 		return "", newErr
 	}
-	blobString, _, err := st.ReadNBytes(long)
+	blobString := make([]byte, long)
+	_, err = io.ReadFull(st, blobString)
 	if err != nil {
 		newErr := e.UnableToReadBytes
 		newErr.From = err
 		return "", newErr
 	}
-	_, err = st.Skip(2)
+	_, err = st.Discard(2)
 	if err != nil {
 		newErr := e.UnableToReadBytes
 		newErr.From = err
@@ -48,15 +50,16 @@ func BlobStringFromBytes(st *Stream) (string, e.Error) {
 	return string(blobString), e.Error{}
 }
 
-func ErrorFromBytes(st *Stream) e.Error {
-	firstByte, err := st.TakeOne()
+func ErrorFromBytes(st *bufio.Reader) e.Error {
+	firstByte, err := st.ReadByte()
 	if err != nil {
 		newErr := e.UnableToReadFirstByte
 		newErr.From = err
 		return newErr
 	}
 	if firstByte == '_' {
-		restOfResponse, _, err := st.ReadNBytes(2)
+		restOfResponse := make([]byte, 2)
+		_, err = io.ReadFull(st, restOfResponse)
 		if err != nil {
 			newErr := e.UnableToReadBytes
 			newErr.From = err
@@ -71,11 +74,12 @@ func ErrorFromBytes(st *Stream) e.Error {
 			return e.UnexpectedBytes
 		}
 	} else if firstByte == '-' {
-		bytesRead, err := st.ReadUntilSliceFound([]byte{'\r', '\n'})
+		bytesRead, err := st.ReadBytes('\n')
+		bytesRead = bytesRead[:len(bytesRead)-2]
 		if err != nil {
 			newErr := e.UnableToFindPattern
 			newErr.From = err
-			newErr.ExtraContext["pattern"] = `\r\n`
+			newErr.ExtraContext["pattern"] = `\n`
 			return newErr
 		}
 		finalErr := e.ErrorReceived
@@ -89,8 +93,8 @@ func ErrorFromBytes(st *Stream) e.Error {
 	}
 }
 
-func UIntFromBytes(st *Stream) (int, e.Error) {
-	firstByte, err := st.TakeOne()
+func UIntFromBytes(st *bufio.Reader) (int, e.Error) {
+	firstByte, err := st.ReadByte()
 	if err != nil {
 		newErr := e.UnableToReadFirstByte
 		newErr.From = err
@@ -102,7 +106,8 @@ func UIntFromBytes(st *Stream) (int, e.Error) {
 		newErr.ExtraContext["received"] = string(firstByte)
 		return 0, newErr
 	}
-	bytesRead, err := st.ReadUntilSliceFound([]byte{'\r', '\n'})
+	bytesRead, err := st.ReadBytes('\n')
+	bytesRead = bytesRead[:len(bytesRead)-2]
 	if err != nil {
 		newErr := e.UnableToFindPattern
 		newErr.From = err

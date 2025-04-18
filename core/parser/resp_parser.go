@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"miniredis/core/coreinterface"
@@ -9,17 +11,21 @@ import (
 	"strconv"
 )
 
-type RESPParser struct{}
+type RESPParser struct {
+	buffer [4096]byte
+}
 
-func (r *RESPParser) ParseCommand(stream *rt.Stream) ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
+func (r *RESPParser) ParseCommand(b []byte) ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
 	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
 	var internalParser func() e.Error
+	stream := bufio.NewReader(bytes.NewReader(b))
+
 	internalParser = func() e.Error {
 		var newErr e.Error
-		firstByte, err := stream.TakeOne()
+		firstByte, err := stream.ReadByte()
 		if err == io.EOF {
 			return e.Error{}
-		} else if newErr, ok := err.(e.Error); (ok && newErr.Code != 0) || (!ok && err != nil) {
+		} else if err != nil {
 			newErr = e.UnableToReadFirstByte
 			newErr.From = err
 			return newErr
@@ -30,13 +36,14 @@ func (r *RESPParser) ParseCommand(stream *rt.Stream) ([]func(d coreinterface.Cac
 			newErr.ExtraContext["received"] = string(firstByte)
 			return newErr
 		}
-		bytesRead, err := stream.ReadUntilSliceFound([]byte{'\r', '\n'})
+		bytesRead, err := stream.ReadBytes('\n')
 		if err != nil {
 			newErr = e.UnableToFindPattern
 			newErr.From = err
-			newErr.ExtraContext["pattern"] = `\r\n`
+			newErr.ExtraContext["pattern"] = `\n`
 			return newErr
 		}
+		bytesRead = bytesRead[:len(bytesRead)-2]
 		i, err := strconv.Atoi(string(bytesRead))
 		if err != nil {
 			newErr = e.UnableToDetermineBulkArraySize
