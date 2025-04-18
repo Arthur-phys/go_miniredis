@@ -11,16 +11,15 @@ import (
 
 type RESPParser struct{}
 
-func (r *RESPParser) ParseCommand(b []byte) ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
+func (r *RESPParser) ParseCommand(stream *rt.Stream) ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
 	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
-	stream := rt.NewStream(b)
 	var internalParser func() e.Error
 	internalParser = func() e.Error {
 		var newErr e.Error
 		firstByte, err := stream.TakeOne()
 		if err == io.EOF {
 			return e.Error{}
-		} else if err != nil {
+		} else if newErr, ok := err.(e.Error); (ok && newErr.Code != 0) || (!ok && err != nil) {
 			newErr = e.UnableToReadFirstByte
 			newErr.From = err
 			return newErr
@@ -46,7 +45,7 @@ func (r *RESPParser) ParseCommand(b []byte) ([]func(d coreinterface.CacheStore) 
 		}
 		arr := make([]string, i)
 		for j := range arr {
-			arr[j], newErr = rt.BlobStringFromBytes(&stream)
+			arr[j], newErr = rt.BlobStringFromBytes(stream)
 			if newErr.Code != 0 {
 				return newErr
 			}

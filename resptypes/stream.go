@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io"
 	e "miniredis/error"
+	"net"
 )
 
 // Simple wrapper for a bufio.Reader
@@ -14,6 +15,10 @@ type Stream struct {
 
 func NewStream(b []byte) Stream {
 	return Stream{bufio.NewReader(bytes.NewBuffer(b))}
+}
+
+func NewStreamFromConnection(c *net.Conn) Stream {
+	return Stream{bufio.NewReader(*c)}
 }
 
 func (s *Stream) ReadUntilFound(delim byte) ([]byte, error) {
@@ -57,6 +62,9 @@ func (s *Stream) ReadNBytes(n int) ([]byte, int, error) {
 }
 
 func (s *Stream) TakeOne() (byte, error) {
+	if _, err := s.byteReader.Peek(1); err != nil {
+		return 0, err
+	}
 	return s.byteReader.ReadByte()
 }
 

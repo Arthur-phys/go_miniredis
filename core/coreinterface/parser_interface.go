@@ -2,8 +2,9 @@ package coreinterface
 
 import (
 	e "miniredis/error"
+	"miniredis/resptypes"
 )
 
 type Parser interface {
-	ParseCommand(buffer []byte) ([]func(d CacheStore) ([]byte, e.Error), e.Error)
+	ParseCommand(stream *resptypes.Stream) ([]func(d CacheStore) ([]byte, e.Error), e.Error)
 }

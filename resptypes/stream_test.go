@@ -115,6 +115,16 @@ func TestSkip_Should_Return_Error_When_N_Bigger_Than_Reader_Size(t *testing.T) {
 	}
 }
 
+func TestTakeOne_Should_Return_Error_When_None_Available(t *testing.T) {
+	mockReader := NewmockReader([]byte{'h'}, 1)
+	stream := Stream{bufio.NewReader(&mockReader)}
+	stream.TakeOne()
+	_, err := stream.TakeOne()
+	if err == nil {
+		t.Errorf("Error did not happen!")
+	}
+}
+
 type mockReader struct {
 	bytesArr         []byte
 	currentBytesRead int

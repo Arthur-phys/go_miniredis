@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"io"
 	e "miniredis/error"
 	rt "miniredis/resptypes"
@@ -107,6 +108,7 @@ func (client *Client) sendAndRead(bytes []byte) (rt.Stream, e.Error) {
 	}
 	returnBytes := make([]byte, 10240)
 	_, err = (*client.conn).Read(returnBytes)
+	fmt.Printf("Came back from reading bytes: %v\r\n", string(returnBytes))
 	if err != io.EOF && err != nil {
 		return rt.NewStream([]byte{}), e.Error{}
 	}
