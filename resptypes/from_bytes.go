@@ -20,8 +20,7 @@ func BlobStringFromBytes(st *bufio.Reader) (string, e.Error) {
 		newErr.ExtraContext["received"] = string(firstByte)
 		return "", newErr
 	}
-	bytesRead, err := st.ReadBytes('\n')
-	bytesRead = bytesRead[:len(bytesRead)-2]
+	bytesRead, err := ReadUntilSliceFound(st, []byte{'\r', '\n'})
 	if err != nil {
 		newErr := e.UnableToFindPattern
 		newErr.From = err
@@ -74,8 +73,7 @@ func ErrorFromBytes(st *bufio.Reader) e.Error {
 			return e.UnexpectedBytes
 		}
 	} else if firstByte == '-' {
-		bytesRead, err := st.ReadBytes('\n')
-		bytesRead = bytesRead[:len(bytesRead)-2]
+		bytesRead, err := ReadUntilSliceFound(st, []byte{'\r', '\n'})
 		if err != nil {
 			newErr := e.UnableToFindPattern
 			newErr.From = err
@@ -106,8 +104,7 @@ func UIntFromBytes(st *bufio.Reader) (int, e.Error) {
 		newErr.ExtraContext["received"] = string(firstByte)
 		return 0, newErr
 	}
-	bytesRead, err := st.ReadBytes('\n')
-	bytesRead = bytesRead[:len(bytesRead)-2]
+	bytesRead, err := ReadUntilSliceFound(st, []byte{'\r', '\n'})
 	if err != nil {
 		newErr := e.UnableToFindPattern
 		newErr.From = err
@@ -121,4 +118,34 @@ func UIntFromBytes(st *bufio.Reader) (int, e.Error) {
 		return 0, newErr
 	}
 	return num, e.Error{}
+}
+
+func ReadUntilSliceFound(buffer *bufio.Reader, delim []byte) ([]byte, error) {
+	if len(delim) == 0 {
+		return []byte{}, e.Error{} // Change
+	}
+	var sliceFoundRecursive func([]byte, []byte) ([]byte, error)
+	sliceFoundRecursive = func(delim []byte, bytesRead []byte) ([]byte, error) {
+		bytes, err := buffer.ReadBytes(delim[0])
+		bytesRead = append(bytesRead, bytes...)
+		if err != nil {
+			return bytesRead, err
+		}
+		for i := 1; i < len(delim); i++ {
+			newByte, err := buffer.ReadByte()
+			if err != nil {
+				return bytesRead, err
+			}
+			bytesRead = append(bytesRead, newByte)
+			if newByte != delim[i] {
+				return sliceFoundRecursive(delim, bytesRead) // Change
+			}
+		}
+		return bytesRead, nil
+	}
+	bytes, err := sliceFoundRecursive(delim, []byte{})
+	if err == nil {
+		bytes = bytes[:len(bytes)-len(delim)]
+	}
+	return bytes, err
 }

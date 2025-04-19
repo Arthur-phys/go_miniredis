@@ -12,13 +12,14 @@ import (
 )
 
 type RESPParser struct {
-	buffer [4096]byte
+	buffer []byte
 }
 
 func (r *RESPParser) ParseCommand(b []byte) ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
 	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
 	var internalParser func() e.Error
-	stream := bufio.NewReader(bytes.NewReader(b))
+	stream := bufio.NewReader(bytes.NewReader(append(b, r.buffer...)))
+	r.buffer = []byte{}
 
 	internalParser = func() e.Error {
 		var newErr e.Error
@@ -36,14 +37,17 @@ func (r *RESPParser) ParseCommand(b []byte) ([]func(d coreinterface.CacheStore) 
 			newErr.ExtraContext["received"] = string(firstByte)
 			return newErr
 		}
-		bytesRead, err := stream.ReadBytes('\n')
+		bytesRead, err := rt.ReadUntilSliceFound(stream, []byte{'\r', '\n'})
+		if err == io.EOF {
+			r.buffer = bytesRead
+			return e.Error{}
+		}
 		if err != nil {
 			newErr = e.UnableToFindPattern
 			newErr.From = err
-			newErr.ExtraContext["pattern"] = `\n`
+			newErr.ExtraContext["pattern"] = `\r\n`
 			return newErr
 		}
-		bytesRead = bytesRead[:len(bytesRead)-2]
 		i, err := strconv.Atoi(string(bytesRead))
 		if err != nil {
 			newErr = e.UnableToDetermineBulkArraySize

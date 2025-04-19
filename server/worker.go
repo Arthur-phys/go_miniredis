@@ -60,22 +60,16 @@ func (w *Worker) handleConnection(c *net.Conn) {
 		for _, command := range commands {
 			w.cacheStore.Lock()
 			res, err := command(w.cacheStore)
-			finalResponse = append(finalResponse, res...)
 			w.cacheStore.Unlock()
 			if err.Code != 0 {
 				slog.Error("An error occurred while executing client's command", "ERROR", err,
 					slog.Uint64("WORKER_ID", w.id),
 					slog.String("CLIENT", (*c).RemoteAddr().String()),
 				)
-				_, err := (*c).Write(rt.ErrToBytes(newErr))
-				if err != nil {
-					slog.Error("An error occurred while sending error response to client", "ERROR", err,
-						slog.Uint64("WORKER_ID", w.id),
-						slog.String("CLIENT", (*c).RemoteAddr().String()),
-					)
-				}
-				return
+				finalResponse = append(finalResponse, rt.ErrToBytes(newErr)...)
+				continue
 			}
+			finalResponse = append(finalResponse, res...)
 		}
 		_, err = (*c).Write(finalResponse)
 		if err != nil {

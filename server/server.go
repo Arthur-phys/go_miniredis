@@ -32,7 +32,7 @@ func (s *Server) Run() {
 	for {
 		err := s.Accept()
 		if err != nil {
-			slog.Error(err.Error())
+			slog.Error("An error occurred while accepting a new connection", "ERROR", err)
 		}
 	}
 }
