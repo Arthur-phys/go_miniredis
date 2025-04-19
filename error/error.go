@@ -19,6 +19,7 @@ var (
 	UnexpectedBytes                = Error{"Unexpected bytes encountered while processing byte sequence", "", 10, nil, make(map[string]string)}
 	ErrorReceived                  = Error{"Error received as a response", "", 11, nil, make(map[string]string)}
 	UnableToConvertLenToInt        = Error{"Unable to convert the given response to an integer representing length of array", "", 12, nil, make(map[string]string)}
+	UnableToReadFromConnection     = Error{"Unable to read bytes from connection", "", 13, nil, make(map[string]string)}
 )
 
 type Error struct {

@@ -3,6 +3,7 @@ package server
 import (
 	"log/slog"
 	"miniredis/core/coreinterface"
+	"miniredis/core/parser"
 	rt "miniredis/resptypes"
 	"net"
 	"time"
@@ -10,15 +11,13 @@ import (
 
 type Worker struct {
 	cacheStore        coreinterface.CacheStore
-	parser            coreinterface.Parser
+	parseInstantiator func(c *net.Conn) *parser.RESPParser
 	connectionChannel chan net.Conn
 	timeout           uint
 	id                uint64
 }
 
-func NewWorkerInstantiator(
-	parseInstantiator func() coreinterface.Parser,
-) func(
+func NewWorkerInstantiator() func(
 	cacheStore coreinterface.CacheStore,
 	connectionChannel chan net.Conn,
 	timeout uint,
@@ -26,22 +25,22 @@ func NewWorkerInstantiator(
 	var i uint64 = 0
 	return func(CacheStore coreinterface.CacheStore, connectionChannel chan net.Conn, timeout uint) Worker {
 		i++
-		return Worker{CacheStore, parseInstantiator(), connectionChannel, timeout, i}
+		return Worker{CacheStore, parser.NewRESPParser, connectionChannel, timeout, i}
 	}
 }
 
 func (w *Worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
-	buffer := make([]byte, 4096)
+	parser := w.parseInstantiator(c)
 
 	for {
 		finalResponse := []byte{}
-		n, err := (*c).Read(buffer)
-		if err != nil {
+		_, err := parser.Read()
+		if err.Code != 0 {
 			return
 		}
-		commands, newErr := w.parser.ParseCommand(buffer[:n])
+		commands, newErr := parser.ParseCommand()
 		if newErr.Code != 0 {
 			slog.Error("An error occurred while parsing the command", "ERROR", newErr,
 				slog.Uint64("WORKER_ID", w.id),
@@ -71,8 +70,9 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			}
 			finalResponse = append(finalResponse, res...)
 		}
-		_, err = (*c).Write(finalResponse)
-		if err != nil {
+
+		_, nerr := (*c).Write(finalResponse)
+		if nerr != nil {
 			slog.Error("An error occurred while returning a response to the client", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),

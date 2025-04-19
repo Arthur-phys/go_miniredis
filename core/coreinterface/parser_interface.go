@@ -5,5 +5,5 @@ import (
 )
 
 type Parser interface {
-	ParseCommand(bytes []byte) ([]func(d CacheStore) ([]byte, e.Error), e.Error)
+	ParseCommand() ([]func(d CacheStore) ([]byte, e.Error), e.Error)
 }

@@ -69,31 +69,3 @@ package resptypes
 // 		t.Errorf("Error did not happen!")
 // 	}
 // }
-
-// type mockReader struct {
-// 	bytesArr         []byte
-// 	currentBytesRead int
-// 	limitBytes       int
-// 	read             func(b []byte, mc *mockReader) (int, error)
-// }
-
-// func NewmockReader(bytes []byte, limitBytes int) mockReader {
-// 	read := func(b []byte, mc *mockReader) (int, error) {
-// 		n, i := int(math.Min(float64(len(b)), float64(len(mc.bytesArr)))), 0
-// 		for i < n {
-// 			b[i] = mc.bytesArr[i]
-// 			i++
-// 			mc.currentBytesRead++
-// 			if mc.currentBytesRead >= mc.limitBytes {
-// 				defer func() { mc.read = func(b []byte, mc *mockReader) (int, error) { return 0, io.EOF } }()
-// 				return i, io.EOF
-// 			}
-// 		}
-// 		return n, nil
-// 	}
-// 	return mockReader{bytes, 0, limitBytes, read}
-// }
-
-// func (mc *mockReader) Read(b []byte) (int, error) {
-// 	return mc.read(b, mc)
-// }
