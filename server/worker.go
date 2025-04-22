@@ -38,15 +38,21 @@ func (w *Worker) handleConnection(c *net.Conn) {
 		finalResponse := []byte{}
 		_, err := parser.Read()
 		if err.Code != 0 {
+			// Stopped any Conn error here, incluiding EOF, Broken Pipe, etc.
 			return
 		}
-		commands, newErr := parser.ParseCommand()
-		if newErr.Code != 0 {
-			slog.Error("An error occurred while parsing the command", "ERROR", newErr,
+
+		commands, err := parser.ParseCommand()
+		if err.Code == 3 || err.Code == 4 {
+			// Should try to keep on reading, buffer exhausted
+			continue
+		} else if err.Code != 0 {
+			// Command malformed, return immediately
+			slog.Error("An error occurred while parsing the command", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),
 			)
-			_, err := (*c).Write(rt.ErrToBytes(newErr))
+			_, err := (*c).Write(rt.ErrToBytes(err))
 			if err != nil {
 				slog.Error("An error occurred while sending error response to client", "ERROR", err,
 					slog.Uint64("WORKER_ID", w.id),
@@ -56,6 +62,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			return
 		}
 
+		// Proceed with evaluation
 		for _, command := range commands {
 			w.cacheStore.Lock()
 			res, err := command(w.cacheStore)
@@ -65,7 +72,8 @@ func (w *Worker) handleConnection(c *net.Conn) {
 					slog.Uint64("WORKER_ID", w.id),
 					slog.String("CLIENT", (*c).RemoteAddr().String()),
 				)
-				finalResponse = append(finalResponse, rt.ErrToBytes(newErr)...)
+				// Errors are delivered at the end for every command
+				finalResponse = append(finalResponse, rt.ErrToBytes(err)...)
 				continue
 			}
 			finalResponse = append(finalResponse, res...)

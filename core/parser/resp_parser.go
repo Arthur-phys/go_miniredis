@@ -21,6 +21,13 @@ type RESPParser struct {
 	lastCommandUnprocessed bool
 }
 
+func NewRESPParser(conn *net.Conn) *RESPParser {
+	rawBuffer := make([]byte, 4096)
+	lastCommand := []byte{}
+	buffer := bufio.NewReader(bytes.NewReader(rawBuffer))
+	return &RESPParser{conn, rawBuffer, 0, buffer, lastCommand, false}
+}
+
 func (r *RESPParser) Read() (int, e.Error) {
 	r.rawBuffer = make([]byte, 4096)
 	r.rawBufferPosition = 0
@@ -43,35 +50,23 @@ func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte,
 	var internalParser func() e.Error
 
 	internalParser = func() e.Error {
-		var newErr e.Error
-		firstByte, err := r.buffer.ReadByte()
-		if err == io.EOF {
-			return e.Error{}
-		} else if err != nil {
-			newErr = e.UnableToReadFirstByte
-			newErr.From = err
-			return newErr
-		}
-		if firstByte != '*' {
-			newErr = e.UnexpectedFirstByte
-			newErr.ExtraContext["expected"] = "*"
-			newErr.ExtraContext["received"] = string(firstByte)
-			return newErr
-		}
 
-		bytesRead, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
-		if newErr.Code == 5 {
+		totalBytesRead := 0
+		newErr := r.checkFirstByte('*')
+		if newErr.Code != 0 {
 			return newErr
 		}
+		totalBytesRead += 1
+
+		num, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
 		if newErr.Code != 0 {
-			newErr = e.UnableToFindPattern
-			newErr.From = err
-			newErr.ExtraContext["pattern"] = `\r\n`
 			r.lastCommand = r.rawBuffer[r.rawBufferPosition:]
 			r.lastCommandUnprocessed = true
 			return newErr
 		}
-		i, err := strconv.Atoi(string(bytesRead))
+		totalBytesRead += n
+
+		i, err := strconv.Atoi(string(num))
 		if err != nil {
 			newErr = e.UnableToDetermineBulkArraySize
 			newErr.From = err
@@ -79,21 +74,20 @@ func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte,
 		}
 
 		arr := make([]string, i)
-		rawStringBytesRead := 0
 		for j := range arr {
 			arr[j], n, newErr = r.BlobStringFromBytes()
 			if newErr.Code != 0 {
 				r.lastCommand = r.rawBuffer[r.rawBufferPosition:]
 				return newErr
 			}
-			rawStringBytesRead += n
+			totalBytesRead += n
 		}
 		f, newErr := selectFunction(arr)
 		if newErr.Code != 0 {
 			return newErr
 		}
 		commands = append(commands, f)
-		r.rawBufferPosition += n + 1 + rawStringBytesRead
+		r.rawBufferPosition += totalBytesRead
 		return internalParser()
 	}
 
@@ -102,133 +96,139 @@ func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte,
 }
 
 func (r *RESPParser) BlobStringFromBytes() (string, int, e.Error) {
-	bytesRead := 0
-	firstByte, err := r.buffer.ReadByte()
-	if err != nil {
-		newErr := e.UnableToReadFirstByte
-		newErr.From = err
-		return "", bytesRead, newErr
+	totalBytesRead := 0
+
+	newErr := r.checkFirstByte('$')
+	if newErr.Code != 0 {
+		return "", totalBytesRead, newErr
 	}
-	if firstByte != '$' {
-		newErr := e.UnexpectedFirstByte
-		newErr.ExtraContext["expected"] = "$"
-		newErr.ExtraContext["received"] = string(firstByte)
-		return "", bytesRead, newErr
+	totalBytesRead += 1
+
+	bytesArr, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	if newErr.Code != 0 {
+		return "", totalBytesRead, newErr
 	}
-	bytesRead += 1
-	bytesArr, n, err := r.readUntilSliceFound([]byte{'\r', '\n'})
-	if err != nil {
-		newErr := e.UnableToFindPattern
-		newErr.From = err
-		newErr.ExtraContext["pattern"] = `\r\n`
-		return "", bytesRead, newErr
-	}
-	bytesRead += n
+	totalBytesRead += n
+
 	long, err := strconv.Atoi(string(bytesArr))
 	if err != nil {
-		newErr := e.UnableToDetermineBulkArraySize
+		newErr := e.UnableToDetermineRawStringSize
 		newErr.From = err
-		return "", bytesRead, newErr
+		return "", totalBytesRead, newErr
 	}
+
 	blobString := make([]byte, long)
-	_, err = io.ReadFull(r.buffer, blobString)
+	n, err = io.ReadFull(r.buffer, blobString)
 	if err != nil {
 		newErr := e.UnableToReadBytes
 		newErr.From = err
-		return "", bytesRead, newErr
+		return "", totalBytesRead, newErr
 	}
-	bytesRead += long
-	_, err = r.buffer.Discard(2)
+	totalBytesRead += n
+
+	n, err = r.buffer.Discard(2)
 	if err != nil {
 		newErr := e.UnableToReadBytes
 		newErr.From = err
-		return "", bytesRead, newErr
+		return "", totalBytesRead, newErr
 	}
-	bytesRead += 2
-	return string(blobString), bytesRead, e.Error{}
+	totalBytesRead += n
+
+	return string(blobString), totalBytesRead, e.Error{}
 }
 
-func (r *RESPParser) ErrorFromBytes() e.Error {
-	firstByte, err := r.buffer.ReadByte()
-	if err != nil {
-		newErr := e.UnableToReadFirstByte
-		newErr.From = err
-		return newErr
+func (r *RESPParser) ErrorFromBytes() (int, e.Error) {
+	totalBytesRead := 0
+	newErr := r.checkFirstByte('-')
+	if newErr.Code != 0 {
+		return totalBytesRead, newErr
 	}
-	if firstByte == '_' {
-		restOfResponse := make([]byte, 2)
-		_, err = io.ReadFull(r.buffer, restOfResponse)
-		if err != nil {
-			newErr := e.UnableToReadBytes
-			newErr.From = err
-			return newErr
-		}
-		if restOfResponse[0] == '\r' && restOfResponse[1] == '\n' {
-			return e.Error{}
-		} else {
-			newErr := e.UnexpectedBytes
-			newErr.ExtraContext["expected"] = `\r\n`
-			newErr.ExtraContext["received"] = string(restOfResponse)
-			return e.UnexpectedBytes
-		}
-	} else if firstByte == '-' {
-		bytesRead, _, err := r.readUntilSliceFound([]byte{'\r', '\n'})
-		if err.Code != 0 {
-			newErr := e.UnableToFindPattern
-			newErr.From = err
-			newErr.ExtraContext["pattern"] = `\n`
-			return newErr
-		}
-		finalErr := e.ErrorReceived
-		finalErr.ExtraContext["text"] = string(bytesRead)
-		return finalErr
-	} else {
-		newErr := e.UnexpectedFirstByte
-		newErr.ExtraContext["expected"] = "_ OR -"
-		newErr.ExtraContext["received"] = string(firstByte)
-		return newErr
+	totalBytesRead += 1
+
+	errorReceived, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	if newErr.Code != 0 {
+		return totalBytesRead, newErr
 	}
+	totalBytesRead += n
+
+	finalErr := e.ErrorReceived
+	finalErr.ExtraContext["text"] = string(errorReceived)
+	return totalBytesRead, finalErr
 }
 
-func (r *RESPParser) UIntFromBytes() (int, e.Error) {
-	firstByte, tmpErr := r.buffer.ReadByte()
-	if tmpErr != nil {
-		newErr := e.UnableToReadFirstByte
-		newErr.From = tmpErr
-		return 0, newErr
+func (r *RESPParser) NullFromBytes() (int, e.Error) {
+	totalBytesRead := 0
+	newErr := r.checkFirstByte('_')
+	if newErr.Code != 0 {
+		return totalBytesRead, newErr
 	}
-	if firstByte != ':' {
-		newErr := e.UnexpectedFirstByte
-		newErr.ExtraContext["expected"] = ":"
-		newErr.ExtraContext["received"] = string(firstByte)
-		return 0, newErr
+	totalBytesRead += 1
+
+	_, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	if newErr.Code != 0 {
+		return totalBytesRead, newErr
 	}
-	bytesRead, _, err := r.readUntilSliceFound([]byte{'\r', '\n'})
-	if err.Code != 0 {
-		newErr := e.UnableToFindPattern
-		newErr.From = err
-		newErr.ExtraContext["pattern"] = `\r\n`
-		return 0, newErr
+	if n != 2 {
+		return totalBytesRead, e.NotNullFoundInPlaceOfNull
 	}
-	num, tmpErr := strconv.Atoi(string(bytesRead))
+	totalBytesRead += n
+
+	return totalBytesRead, e.Error{}
+}
+
+func (r *RESPParser) UIntFromBytes() (int, int, e.Error) {
+	totalBytesRead := 0
+	newErr := r.checkFirstByte(':')
+	if newErr.Code != 0 {
+		return 0, totalBytesRead, newErr
+	}
+	totalBytesRead += 1
+
+	integerReceived, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	if newErr.Code != 0 {
+		return 0, totalBytesRead, newErr
+	}
+	totalBytesRead += n
+
+	num, tmpErr := strconv.Atoi(string(integerReceived))
 	if tmpErr != nil {
 		newErr := e.UnableToConvertLenToInt
 		newErr.From = tmpErr
-		return 0, newErr
+		return 0, totalBytesRead, newErr
 	}
-	return num, e.Error{}
+
+	return num, totalBytesRead, e.Error{}
+}
+
+func (r *RESPParser) checkFirstByte(b byte) e.Error {
+	firstByte, err := r.buffer.ReadByte()
+	if err != nil {
+		newErr := e.UnableToReadFirstByte
+		newErr.From = err
+		return newErr
+	}
+	if firstByte != b {
+		newErr := e.UnexpectedFirstByte
+		newErr.ExtraContext["expected"] = string(b)
+		newErr.ExtraContext["received"] = string(firstByte)
+		return newErr
+	}
+	return e.Error{}
 }
 
 func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, e.Error) {
 	var sliceFoundRecursive func([]byte, []byte) ([]byte, e.Error)
+
 	sliceFoundRecursive = func(delim []byte, bytesRead []byte) ([]byte, e.Error) {
 		bytes, err := r.buffer.ReadBytes(delim[0])
-		bytesRead = append(bytesRead, bytes...)
 		if err != nil {
 			newErr := e.UnableToFindPattern
 			newErr.From = err
+			newErr.ExtraContext["pattern"] = string(delim)
 			return bytesRead, newErr
 		}
+		bytesRead = append(bytesRead, bytes...)
+
 		for i := 1; i < len(delim); i++ {
 			newByte, err := r.buffer.ReadByte()
 			if err != nil {
@@ -378,11 +378,4 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 		newErr.ExtraContext["function"] = arr[0]
 		return f, newErr
 	}
-}
-
-func NewRESPParser(conn *net.Conn) *RESPParser {
-	rawBuffer := make([]byte, 4096)
-	lastCommand := []byte{}
-	buffer := bufio.NewReader(bytes.NewReader(rawBuffer))
-	return &RESPParser{conn, rawBuffer, 0, buffer, lastCommand, false}
 }
