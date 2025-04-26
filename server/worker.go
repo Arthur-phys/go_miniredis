@@ -42,9 +42,9 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			return
 		}
 		commands, err := parser.ParseCommand()
+		// if the buffer was exhausted, do not return an error
 		if err.Code != 0 && err.Code != 3 && err.Code != 4 {
 			// Command malformed, return immediately
-			// Otherwise the buffer was exhausted, process commands before keep on reading
 			slog.Error("An error occurred while parsing the command", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),

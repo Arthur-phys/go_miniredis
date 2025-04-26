@@ -16,6 +16,7 @@ type RESPParser struct {
 	conn                   *net.Conn
 	rawBuffer              []byte
 	rawBufferPosition      int
+	rawBufferMaxBytes      int
 	buffer                 *bufio.Reader
 	lastCommand            []byte
 	lastCommandUnprocessed bool
@@ -25,13 +26,14 @@ func NewRESPParser(conn *net.Conn) *RESPParser {
 	rawBuffer := make([]byte, 4096)
 	lastCommand := []byte{}
 	buffer := bufio.NewReader(bytes.NewReader(rawBuffer))
-	return &RESPParser{conn, rawBuffer, 0, buffer, lastCommand, false}
+	return &RESPParser{conn, rawBuffer, 0, 4096, buffer, lastCommand, false}
 }
 
 func (r *RESPParser) Read() (int, e.Error) {
 	r.rawBuffer = make([]byte, 4096)
 	r.rawBufferPosition = 0
 	n, err := (*r.conn).Read(r.rawBuffer)
+	r.rawBufferMaxBytes = n
 	if err != nil {
 		newErr := e.UnableToReadFromConnection
 		newErr.From = err
@@ -40,9 +42,37 @@ func (r *RESPParser) Read() (int, e.Error) {
 	if r.lastCommandUnprocessed {
 		r.rawBuffer = append(r.lastCommand, r.rawBuffer[:n]...)
 		r.lastCommandUnprocessed = false
+		r.buffer.Reset(bytes.NewReader(r.rawBuffer))
+	} else {
+		r.buffer.Reset(bytes.NewReader(r.rawBuffer[:n]))
 	}
-	r.buffer.Reset(bytes.NewReader(r.rawBuffer[:n]))
 	return n, e.Error{}
+}
+
+func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
+	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
+	var internalParser func() e.Error
+
+	internalParser = func() e.Error {
+		strArr, n, err := ParseArray(r, func(r *RESPParser) (string, int, e.Error) {
+			return r.BlobStringFromBytes()
+		})
+		if err.Code != 0 && strArr == nil {
+			r.lastCommand = r.rawBuffer[r.rawBufferPosition:r.rawBufferMaxBytes]
+			r.lastCommandUnprocessed = true
+			return err
+		}
+		r.rawBufferPosition += n
+		f, newErr := selectFunction(strArr)
+		if newErr.Code != 0 {
+			return newErr
+		}
+		commands = append(commands, f)
+		return internalParser()
+	}
+
+	newErr := internalParser()
+	return commands, newErr
 }
 
 func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) ([]T, int, e.Error) {
@@ -80,32 +110,6 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 
 	return arr, totalBytesRead, e.Error{}
 
-}
-
-func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
-	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
-	var internalParser func() e.Error
-
-	internalParser = func() e.Error {
-		strArr, n, err := ParseArray(r, func(r *RESPParser) (string, int, e.Error) {
-			return r.BlobStringFromBytes()
-		})
-		if err.Code != 0 {
-			r.lastCommand = r.rawBuffer[r.rawBufferPosition:]
-			r.lastCommandUnprocessed = true
-			return err
-		}
-		r.rawBufferPosition += n
-		f, newErr := selectFunction(strArr)
-		if newErr.Code != 0 {
-			return newErr
-		}
-		commands = append(commands, f)
-		return internalParser()
-	}
-
-	newErr := internalParser()
-	return commands, newErr
 }
 
 func (r *RESPParser) BlobStringFromBytes() (string, int, e.Error) {
