@@ -45,49 +45,62 @@ func (r *RESPParser) Read() (int, e.Error) {
 	return n, e.Error{}
 }
 
+func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) ([]T, int, e.Error) {
+	totalBytesRead := 0
+	var arr []T
+
+	newErr := r.checkFirstByte('*')
+	if newErr.Code != 0 {
+		return nil, totalBytesRead, newErr
+	}
+	totalBytesRead += 1
+
+	num, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	totalBytesRead += n
+	if newErr.Code != 0 {
+		return nil, totalBytesRead, newErr
+	}
+
+	i, err := strconv.Atoi(string(num))
+	if err != nil {
+		newErr = e.UnableToDetermineBulkArraySize
+		newErr.From = err
+		return nil, totalBytesRead, newErr
+	}
+
+	arr = make([]T, i)
+	for j := range arr {
+		var m int = 0
+		arr[j], m, newErr = f(r)
+		totalBytesRead += m
+		if newErr.Code != 0 {
+			return nil, totalBytesRead, newErr
+		}
+	}
+
+	return arr, totalBytesRead, e.Error{}
+
+}
+
 func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
 	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
 	var internalParser func() e.Error
 
 	internalParser = func() e.Error {
-		totalBytesRead := 0
-		newErr := r.checkFirstByte('*')
-		if newErr.Code != 0 {
-			return newErr
-		}
-		totalBytesRead += 1
-
-		num, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
-		if newErr.Code != 0 {
+		strArr, n, err := ParseArray(r, func(r *RESPParser) (string, int, e.Error) {
+			return r.BlobStringFromBytes()
+		})
+		if err.Code != 0 {
 			r.lastCommand = r.rawBuffer[r.rawBufferPosition:]
 			r.lastCommandUnprocessed = true
-			return newErr
+			return err
 		}
-		totalBytesRead += n
-
-		i, err := strconv.Atoi(string(num))
-		if err != nil {
-			newErr = e.UnableToDetermineBulkArraySize
-			newErr.From = err
-			return newErr
-		}
-
-		arr := make([]string, i)
-		for j := range arr {
-			arr[j], n, newErr = r.BlobStringFromBytes()
-			if newErr.Code != 0 {
-				r.lastCommand = r.rawBuffer[r.rawBufferPosition:]
-				r.lastCommandUnprocessed = true
-				return newErr
-			}
-			totalBytesRead += n
-		}
-		f, newErr := selectFunction(arr)
+		r.rawBufferPosition += n
+		f, newErr := selectFunction(strArr)
 		if newErr.Code != 0 {
 			return newErr
 		}
 		commands = append(commands, f)
-		r.rawBufferPosition += totalBytesRead
 		return internalParser()
 	}
 
@@ -105,10 +118,10 @@ func (r *RESPParser) BlobStringFromBytes() (string, int, e.Error) {
 	totalBytesRead += 1
 
 	bytesArr, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	totalBytesRead += n
 	if newErr.Code != 0 {
 		return "", totalBytesRead, newErr
 	}
-	totalBytesRead += n
 
 	long, err := strconv.Atoi(string(bytesArr))
 	if err != nil {
@@ -119,26 +132,27 @@ func (r *RESPParser) BlobStringFromBytes() (string, int, e.Error) {
 
 	blobString := make([]byte, long)
 	n, err = io.ReadFull(r.buffer, blobString)
+	totalBytesRead += n
 	if err != nil {
 		newErr := e.UnableToReadBytes
 		newErr.From = err
 		return "", totalBytesRead, newErr
 	}
-	totalBytesRead += n
 
 	n, err = r.buffer.Discard(2)
+	totalBytesRead += n
 	if err != nil {
 		newErr := e.UnableToReadBytes
 		newErr.From = err
 		return "", totalBytesRead, newErr
 	}
-	totalBytesRead += n
 
 	return string(blobString), totalBytesRead, e.Error{}
 }
 
 func (r *RESPParser) ErrorFromBytes() (int, e.Error) {
 	totalBytesRead := 0
+
 	newErr := r.checkFirstByte('-')
 	if newErr.Code != 0 {
 		return totalBytesRead, newErr
@@ -146,10 +160,10 @@ func (r *RESPParser) ErrorFromBytes() (int, e.Error) {
 	totalBytesRead += 1
 
 	errorReceived, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	totalBytesRead += n
 	if newErr.Code != 0 {
 		return totalBytesRead, newErr
 	}
-	totalBytesRead += n
 
 	finalErr := e.ErrorReceived
 	finalErr.ExtraContext["text"] = string(errorReceived)
@@ -158,6 +172,7 @@ func (r *RESPParser) ErrorFromBytes() (int, e.Error) {
 
 func (r *RESPParser) NullFromBytes() (int, e.Error) {
 	totalBytesRead := 0
+
 	newErr := r.checkFirstByte('_')
 	if newErr.Code != 0 {
 		return totalBytesRead, newErr
@@ -165,19 +180,20 @@ func (r *RESPParser) NullFromBytes() (int, e.Error) {
 	totalBytesRead += 1
 
 	_, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	totalBytesRead += n
 	if newErr.Code != 0 {
 		return totalBytesRead, newErr
 	}
 	if n != 2 {
 		return totalBytesRead, e.NotNullFoundInPlaceOfNull
 	}
-	totalBytesRead += n
 
 	return totalBytesRead, e.Error{}
 }
 
 func (r *RESPParser) UIntFromBytes() (int, int, e.Error) {
 	totalBytesRead := 0
+
 	newErr := r.checkFirstByte(':')
 	if newErr.Code != 0 {
 		return 0, totalBytesRead, newErr
@@ -185,10 +201,10 @@ func (r *RESPParser) UIntFromBytes() (int, int, e.Error) {
 	totalBytesRead += 1
 
 	integerReceived, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	totalBytesRead += n
 	if newErr.Code != 0 {
 		return 0, totalBytesRead, newErr
 	}
-	totalBytesRead += n
 
 	num, tmpErr := strconv.Atoi(string(integerReceived))
 	if tmpErr != nil {
