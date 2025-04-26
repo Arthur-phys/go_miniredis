@@ -78,12 +78,15 @@ type mockConnection struct {
 
 func newMockConnection(bytes []byte, limitBytes int) mockConnection {
 	read := func(b []byte, mc *mockConnection) (int, error) {
+		if mc.currentBytesRead >= mc.limitBytes {
+			return 0, io.EOF
+		}
 		n, i := int(math.Min(float64(len(b)), float64(len(mc.bytesArr)))), 0
 		for i < n {
 			b[i] = mc.bytesArr[i]
 			i++
 			mc.currentBytesRead++
-			if mc.currentBytesRead >= mc.limitBytes {
+			if mc.currentBytesRead > mc.limitBytes {
 				return i, io.EOF
 			}
 		}

@@ -78,6 +78,7 @@ func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte,
 			arr[j], n, newErr = r.BlobStringFromBytes()
 			if newErr.Code != 0 {
 				r.lastCommand = r.rawBuffer[r.rawBufferPosition:]
+				r.lastCommandUnprocessed = true
 				return newErr
 			}
 			totalBytesRead += n
