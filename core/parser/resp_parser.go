@@ -38,10 +38,10 @@ func (r *RESPParser) Read() (int, e.Error) {
 		return n, newErr
 	}
 	if r.lastCommandUnprocessed {
-		r.rawBuffer = append(r.lastCommand, r.rawBuffer...)
+		r.rawBuffer = append(r.lastCommand, r.rawBuffer[:n]...)
 		r.lastCommandUnprocessed = false
 	}
-	r.buffer.Reset(bytes.NewReader(r.rawBuffer))
+	r.buffer.Reset(bytes.NewReader(r.rawBuffer[:n]))
 	return n, e.Error{}
 }
 
@@ -50,7 +50,6 @@ func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte,
 	var internalParser func() e.Error
 
 	internalParser = func() e.Error {
-
 		totalBytesRead := 0
 		newErr := r.checkFirstByte('*')
 		if newErr.Code != 0 {

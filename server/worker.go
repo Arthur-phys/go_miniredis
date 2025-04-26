@@ -41,13 +41,10 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			// Stopped any Conn error here, incluiding EOF, Broken Pipe, etc.
 			return
 		}
-
 		commands, err := parser.ParseCommand()
-		if err.Code == 3 || err.Code == 4 {
-			// Should try to keep on reading, buffer exhausted
-			continue
-		} else if err.Code != 0 {
+		if err.Code != 0 && err.Code != 3 && err.Code != 4 {
 			// Command malformed, return immediately
+			// Otherwise the buffer was exhausted, process commands before keep on reading
 			slog.Error("An error occurred while parsing the command", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
 				slog.String("CLIENT", (*c).RemoteAddr().String()),
