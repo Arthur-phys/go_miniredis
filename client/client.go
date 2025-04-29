@@ -15,7 +15,7 @@ type Client struct {
 }
 
 func NewClient(conn *net.Conn) Client {
-	return Client{conn, bufio.NewReader(*conn), parser.NewRESPParser(conn)}
+	return Client{conn, bufio.NewReader(*conn), parser.NewRESPParser(conn, 10240)}
 }
 
 func (client *Client) Get(key string) (string, e.Error) {

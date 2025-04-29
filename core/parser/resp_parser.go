@@ -16,35 +16,50 @@ type RESPParser struct {
 	conn                   *net.Conn
 	rawBuffer              []byte
 	rawBufferPosition      int
-	rawBufferMaxBytes      int
+	rawBufferEffectiveSize int
+	totalBytesRead         int
+	maxBytesPerCallAllowed int
 	buffer                 *bufio.Reader
 	lastCommand            []byte
 	lastCommandUnprocessed bool
 }
 
-func NewRESPParser(conn *net.Conn) *RESPParser {
+func NewRESPParser(conn *net.Conn, maxBytesAllowed int) *RESPParser {
 	rawBuffer := make([]byte, 4096)
 	lastCommand := []byte{}
 	buffer := bufio.NewReader(bytes.NewReader(rawBuffer))
-	return &RESPParser{conn, rawBuffer, 0, 4096, buffer, lastCommand, false}
+	return &RESPParser{conn, rawBuffer, 0, 0, 0, maxBytesAllowed, buffer, lastCommand, false}
 }
 
 func (r *RESPParser) Read() (int, e.Error) {
 	r.rawBuffer = make([]byte, 4096)
 	r.rawBufferPosition = 0
 	n, err := (*r.conn).Read(r.rawBuffer)
-	r.rawBufferMaxBytes = n
 	if err != nil {
 		newErr := e.UnableToReadFromConnection
 		newErr.From = err
 		return n, newErr
 	}
+	r.rawBufferEffectiveSize = n
+
 	if r.lastCommandUnprocessed {
+		r.totalBytesRead += n
 		r.rawBuffer = append(r.lastCommand, r.rawBuffer[:n]...)
 		r.lastCommandUnprocessed = false
 		r.buffer.Reset(bytes.NewReader(r.rawBuffer))
 	} else {
+		r.totalBytesRead = n
 		r.buffer.Reset(bytes.NewReader(r.rawBuffer[:n]))
+	}
+
+	if r.totalBytesRead > r.maxBytesPerCallAllowed {
+		r.lastCommand = []byte{}
+		r.lastCommandUnprocessed = false
+		r.totalBytesRead = 0
+		newErr := e.MaxSizePerCallExceeded
+		newErr.ExtraContext["maxSize"] = fmt.Sprintf("%d", r.maxBytesPerCallAllowed)
+		newErr.ExtraContext["currentSize"] = fmt.Sprintf("%d", r.totalBytesRead)
+		return n, newErr
 	}
 	return n, e.Error{}
 }
@@ -58,7 +73,7 @@ func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte,
 			return r.BlobStringFromBytes()
 		})
 		if err.Code != 0 && strArr == nil {
-			r.lastCommand = r.rawBuffer[r.rawBufferPosition:r.rawBufferMaxBytes]
+			r.lastCommand = r.rawBuffer[r.rawBufferPosition:r.rawBufferEffectiveSize]
 			r.lastCommandUnprocessed = true
 			return err
 		}
@@ -86,9 +101,11 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 		return nil, totalBytesRead, newErr
 	}
 	totalBytesRead += 1
+	fmt.Println("Total Bytes Read At the beggining: ", totalBytesRead)
 
 	num, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
 	totalBytesRead += n
+	fmt.Println("Total Bytes Read After Reading Until Slice: ", totalBytesRead)
 	if newErr.Code != 0 {
 		return nil, totalBytesRead, newErr
 	}
@@ -105,6 +122,7 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 		var m int = 0
 		arr[j], m, newErr = f(r)
 		totalBytesRead += m
+		fmt.Println("Total Bytes Read After Iteration", j, totalBytesRead)
 		if newErr.Code != 0 {
 			return nil, totalBytesRead, newErr
 		}
@@ -262,10 +280,11 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, e.Error) {
 		return bytesRead, e.Error{}
 	}
 	bytes, err := sliceFoundRecursive(delim, []byte{})
+	totalBytesRead := len(bytes)
 	if err.Code == 0 {
 		bytes = bytes[:len(bytes)-len(delim)]
 	}
-	return bytes, len(bytes) + len(delim), err
+	return bytes, totalBytesRead, err
 }
 
 func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {

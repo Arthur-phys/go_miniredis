@@ -10,29 +10,31 @@ import (
 )
 
 type Worker struct {
-	cacheStore        coreinterface.CacheStore
-	parseInstantiator func(c *net.Conn) *parser.RESPParser
-	connectionChannel chan net.Conn
-	timeout           uint
-	id                uint64
+	cacheStore             coreinterface.CacheStore
+	parseInstantiator      func(c *net.Conn, maxBytesPerCallAllowed int) *parser.RESPParser
+	connectionChannel      chan net.Conn
+	timeout                uint
+	id                     uint64
+	maxBytesPerCallAllowed int
 }
 
 func NewWorkerInstantiator() func(
 	cacheStore coreinterface.CacheStore,
 	connectionChannel chan net.Conn,
+	maxBytesPerCallAllowed int,
 	timeout uint,
 ) Worker {
 	var i uint64 = 0
-	return func(CacheStore coreinterface.CacheStore, connectionChannel chan net.Conn, timeout uint) Worker {
+	return func(CacheStore coreinterface.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout uint) Worker {
 		i++
-		return Worker{CacheStore, parser.NewRESPParser, connectionChannel, timeout, i}
+		return Worker{CacheStore, parser.NewRESPParser, connectionChannel, timeout, i, maxBytesPerCallAllowed}
 	}
 }
 
 func (w *Worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
-	parser := w.parseInstantiator(c)
+	parser := w.parseInstantiator(c, w.maxBytesPerCallAllowed)
 
 	for {
 		finalResponse := []byte{}
@@ -58,7 +60,6 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			}
 			return
 		}
-
 		// Proceed with evaluation
 		for _, command := range commands {
 			w.cacheStore.Lock()

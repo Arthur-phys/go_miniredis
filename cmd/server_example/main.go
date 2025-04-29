@@ -12,6 +12,7 @@ func main() {
 		8000,
 		caches.NewSimpleCacheStore,
 		server.NewWorkerInstantiator(),
+		10240,
 		2,
 		15,
 	)

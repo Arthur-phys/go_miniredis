@@ -20,7 +20,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCacheStore()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
 
 	var genericConn net.Conn
 	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"), 33)
@@ -38,7 +38,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCacheStore()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
 
 	var genericConn net.Conn
 	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n*2\r\n$3\r\nGET\r\n$1\r\nB\r\n"), 53)
@@ -56,7 +56,7 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCacheStore()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
 
 	var genericConn net.Conn
 	newConnection := newMockConnection(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n*1\r\n$3\r\nGET\r\n$1\r\nB\r\n"), 53)
