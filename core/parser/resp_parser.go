@@ -101,11 +101,9 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 		return nil, totalBytesRead, newErr
 	}
 	totalBytesRead += 1
-	fmt.Println("Total Bytes Read At the beggining: ", totalBytesRead)
 
 	num, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
 	totalBytesRead += n
-	fmt.Println("Total Bytes Read After Reading Until Slice: ", totalBytesRead)
 	if newErr.Code != 0 {
 		return nil, totalBytesRead, newErr
 	}
@@ -122,7 +120,6 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 		var m int = 0
 		arr[j], m, newErr = f(r)
 		totalBytesRead += m
-		fmt.Println("Total Bytes Read After Iteration", j, totalBytesRead)
 		if newErr.Code != 0 {
 			return nil, totalBytesRead, newErr
 		}
