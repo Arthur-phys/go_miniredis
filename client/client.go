@@ -47,9 +47,9 @@ func (client *Client) Set(key string, value string) e.Error {
 }
 
 func (client *Client) RPush(key string, args ...string) e.Error {
-	finalBytes := fmt.Appendf([]byte{}, fmt.Sprintf("*%d\r\n$5\r\nRPUSH", len(args)+1))
+	finalBytes := fmt.Appendf([]byte{}, fmt.Sprintf("*%d\r\n$5\r\nRPUSH\r\n$%d\r\n%v", len(args)+2, len(key), key))
 	for i := range args {
-		finalBytes = fmt.Appendf(finalBytes, fmt.Sprintf("\r\n%d\r\n%v", len(args[i]), args[i]))
+		finalBytes = fmt.Appendf(finalBytes, fmt.Sprintf("\r\n$%d\r\n%v", len(args[i]), args[i]))
 	}
 	finalBytes = fmt.Appendf(finalBytes, "\r\n")
 	err := client.sendBytes(finalBytes)
@@ -107,9 +107,9 @@ func (client *Client) LPop(key string) (string, e.Error) {
 }
 
 func (client *Client) LPush(key string, args ...string) e.Error {
-	finalBytes := fmt.Appendf([]byte{}, fmt.Sprintf("*%d\r\n$5\r\nLPUSH", len(args)+1))
+	finalBytes := fmt.Appendf([]byte{}, fmt.Sprintf("*%d\r\n$5\r\nLPUSH\r\n$%d\r\n%v", len(args)+2, len(key), key))
 	for i := range args {
-		finalBytes = fmt.Appendf(finalBytes, fmt.Sprintf("\r\n%d\r\n%v", len(args[i]), args[i]))
+		finalBytes = fmt.Appendf(finalBytes, fmt.Sprintf("\r\n$%d\r\n%v", len(args[i]), args[i]))
 	}
 	finalBytes = fmt.Appendf(finalBytes, "\r\n")
 	err := client.sendBytes(finalBytes)
