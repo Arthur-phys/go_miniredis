@@ -44,7 +44,3 @@ func (e Error) LogValue() slog.Value {
 		slog.Any("Extra Information", e.ExtraContext),
 	)
 }
-
-func Unwrap(e Error) error {
-	return e.From
-}

@@ -1,4 +1,4 @@
-package resptypes
+package tobytes
 
 import (
 	"fmt"
