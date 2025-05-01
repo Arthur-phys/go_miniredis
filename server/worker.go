@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log/slog"
 	"miniredis/core/coreinterface"
 	"miniredis/core/parser"
@@ -61,8 +60,6 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			}
 			return
 		}
-		// Proceed with evaluation
-		fmt.Printf("Are there any commands? - %d\n", len(commands))
 		for _, command := range commands {
 			w.cacheStore.Lock()
 			res, err := command(w.cacheStore)
@@ -87,7 +84,6 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			)
 			return
 		}
-		fmt.Printf("Passed evaluation of commands & writing\n")
 		(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	}
 }

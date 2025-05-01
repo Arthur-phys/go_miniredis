@@ -147,20 +147,22 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Partitioned
 		newWorker.handleConnection(&genericConn)
 	}()
 
-	// In multiple commands
 	newConnection.writeAsClient(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"))
 	response := make([]byte, 1024)
 	n, _ := newConnection.readAsClient(response)
 	if string(response[:n]) != "_\r\n" {
 		t.Errorf("Unexpected message received! %v", string(response))
 	}
-	fmt.Printf("\nPassed first test!\n")
 
+	// Partitioned multiple commands
 	newConnection.writeAsClient(fmt.Appendf([]byte{}, "*2\r\n$3\r\nGET\r\n$1\r\n"))
-	fmt.Printf("\nPassed second test!\n")
-
 	// A command partitioned in the array declaration
 	newConnection.writeAsClient(fmt.Appendf([]byte{}, "B\r\n*4\r"))
+	response = make([]byte, 1024)
+	n, _ = newConnection.readAsClient(response)
+	if string(response[:n]) != "$7\r\ncrayoli\r\n" {
+		t.Errorf("Unexpected message received! %v", string(response))
+	}
 	// Then in the raw string declaration
 	newConnection.writeAsClient(fmt.Appendf([]byte{}, "\n$5\r"))
 	// Then in the raw string content
@@ -170,7 +172,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Partitioned
 
 	response = make([]byte, 1024)
 	n, _ = newConnection.readAsClient(response)
-	if string(response[:n]) != "$7\r\ncrayoli\r\n_\r\n" {
+	if string(response[:n]) != "_\r\n" {
 		t.Errorf("Unexpected message received! %v", string(response))
 	}
 }

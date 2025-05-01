@@ -43,18 +43,13 @@ func (r *RESPParser) Read() (int, e.Error) {
 	r.rawBufferEffectiveSize = n
 
 	if r.lastCommandUnprocessed {
-		fmt.Printf("Last command was unprocessed!\n")
-		fmt.Printf("Effective size of raw buffer: %d. Size of lastCommand: %d\n", n, len(r.lastCommand))
 		r.totalBytesRead += n
-		fmt.Printf("Total bytes read until now! %d\n", r.totalBytesRead)
 		r.rawBuffer = append(r.lastCommand, r.rawBuffer[:n]...)
 		r.rawBufferEffectiveSize += len(r.lastCommand)
-		fmt.Printf("Actual raw buffer: %v - %d - %s\n", r.rawBuffer, len(r.rawBuffer), string(r.rawBuffer))
 		r.lastCommand = []byte{}
 		r.lastCommandUnprocessed = false
 		r.buffer.Reset(bytes.NewReader(r.rawBuffer))
 	} else {
-		fmt.Printf("New command with total bytes read %d\n", n)
 		r.totalBytesRead = n
 		r.buffer.Reset(bytes.NewReader(r.rawBuffer[:n]))
 	}
@@ -76,17 +71,13 @@ func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte,
 	var internalParser func() e.Error
 
 	internalParser = func() e.Error {
-		fmt.Printf("\n--- A new iteration in the parser ---\n")
 		strArr, n, err := ParseArray(r, func(r *RESPParser) (string, int, e.Error) {
 			return r.BlobStringFromBytes()
 		})
 		if n == 0 {
-			fmt.Printf("\nThe error for 'n = 0' is %v - %e\n", err, err.From)
 			return err
 		}
-		fmt.Printf("\nthe bytes read were: %d\n", n)
 		if err.Code != 0 && strArr == nil {
-			fmt.Printf("\nThe error is %v - %e\n", err, err.From)
 			r.lastCommand = r.rawBuffer[r.rawBufferPosition:r.rawBufferEffectiveSize]
 			r.lastCommandUnprocessed = true
 			return err
