@@ -63,6 +63,41 @@ func TestRPop_Should_Return_Error_When_List_Is_Not_Present(t *testing.T) {
 	}
 }
 
+func TestRPop_Should_Delete_List_When_Empty(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	err := cs.RPush("key", "value")
+	if err.Code != 0 {
+		t.Errorf("An error occurred! %v", err)
+	}
+	if val, err := cs.RPop("key"); err.Code != 0 || val != "value" {
+		t.Errorf("An error occured! %v - %v", err, val)
+	}
+	if _, err := cs.RPop("key"); err.Code != 1 {
+		t.Errorf("Unexpected error occurred! %v", err)
+	}
+}
+
+func TestRPop_Should_Remove_Elements_In_Succession(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	err := cs.RPush("key", "value")
+	if err.Code != 0 {
+		t.Errorf("An error occurred! %v", err)
+	}
+	err = cs.RPush("key", "value_2")
+	if err.Code != 0 {
+		t.Errorf("An error occurred! %v", err)
+	}
+	if val, err := cs.RPop("key"); err.Code != 0 || val != "value_2" {
+		t.Errorf("An error occured! %v - %v", err, val)
+	}
+	if val, err := cs.RPop("key"); err.Code != 0 || val != "value" {
+		t.Errorf("An error occured! %v - %v", err, val)
+	}
+	if _, err := cs.RPop("key"); err.Code != 1 {
+		t.Errorf("Unexpected error occurred! %v", err)
+	}
+}
+
 func TestLPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
 	cs := NewSimpleCacheStore()
 	err := cs.LPush("key", "value")
@@ -75,6 +110,41 @@ func TestLPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
 	}
 	if val, err := cs.LPop("key"); err.Code != 0 || val != "value_2" {
 		t.Errorf("An error occured! %v - %v", err, val)
+	}
+}
+
+func TestLPop_Should_Delete_List_When_Empty(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	err := cs.LPush("key", "value")
+	if err.Code != 0 {
+		t.Errorf("An error occurred! %v", err)
+	}
+	if val, err := cs.LPop("key"); err.Code != 0 || val != "value" {
+		t.Errorf("An error occured! %v - %v", err, val)
+	}
+	if _, err := cs.LPop("key"); err.Code != 1 {
+		t.Errorf("Unexpected error occurred! %v", err)
+	}
+}
+
+func TestLPop_Should_Remove_Elements_In_Succession(t *testing.T) {
+	cs := NewSimpleCacheStore()
+	err := cs.LPush("key", "value")
+	if err.Code != 0 {
+		t.Errorf("An error occurred! %v", err)
+	}
+	err = cs.LPush("key", "value_2")
+	if err.Code != 0 {
+		t.Errorf("An error occurred! %v", err)
+	}
+	if val, err := cs.LPop("key"); err.Code != 0 || val != "value_2" {
+		t.Errorf("An error occured! %v - %v", err, val)
+	}
+	if val, err := cs.LPop("key"); err.Code != 0 || val != "value" {
+		t.Errorf("An error occured! %v - %v", err, val)
+	}
+	if _, err := cs.LPop("key"); err.Code != 1 {
+		t.Errorf("Unexpected error occurred! %v", err)
 	}
 }
 

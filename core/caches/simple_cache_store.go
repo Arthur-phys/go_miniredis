@@ -48,8 +48,8 @@ func (c *SimpleCacheStore) RPush(key string, args ...string) e.Error {
 func (c *SimpleCacheStore) RPop(key string) (string, e.Error) {
 	var x string
 	if v, ok := c.arrayDictionary[key]; ok {
-		x, v = v[len(v)-1], v[:len(v)-1]
-		if len(v) == 0 {
+		x, c.arrayDictionary[key] = v[len(v)-1], v[:len(v)-1]
+		if len(v)-1 == 0 {
 			delete(c.arrayDictionary, key)
 		}
 		return x, e.Error{}
@@ -72,8 +72,8 @@ func (c *SimpleCacheStore) LPush(key string, args ...string) e.Error {
 func (c *SimpleCacheStore) LPop(key string) (string, e.Error) {
 	var x string
 	if v, ok := c.arrayDictionary[key]; ok {
-		x, v = v[0], v[1:]
-		if len(v) == 0 {
+		x, c.arrayDictionary[key] = v[0], v[1:]
+		if len(v)-1 == 0 {
 			delete(c.arrayDictionary, key)
 		}
 		return x, e.Error{}
