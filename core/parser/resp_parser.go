@@ -45,6 +45,7 @@ func (r *RESPParser) Read() (int, e.Error) {
 	if r.lastCommandUnprocessed {
 		r.totalBytesRead += n
 		r.rawBuffer = append(r.lastCommand, r.rawBuffer[:n]...)
+		r.lastCommand = []byte{}
 		r.lastCommandUnprocessed = false
 		r.buffer.Reset(bytes.NewReader(r.rawBuffer))
 	} else {

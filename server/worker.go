@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log/slog"
 	"miniredis/core/coreinterface"
 	"miniredis/core/parser"
@@ -37,6 +38,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 	parser := w.parseInstantiator(c, w.maxBytesPerCallAllowed)
 
 	for {
+		fmt.Println("Waiting on read")
 		finalResponse := []byte{}
 		_, err := parser.Read()
 		if err.Code != 0 {
