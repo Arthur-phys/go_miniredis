@@ -22,7 +22,7 @@ var (
 	UnableToConvertLenToInt        = Error{"Unable to convert the given response to an integer representing length of array", "", 14, nil, make(map[string]string)}
 	UnableToReadFromConnection     = Error{"Unable to read bytes from connection", "", 15, nil, make(map[string]string)}
 	UnableToSendRequestToServer    = Error{"Unable to send request to miniredis server", "", 16, nil, make(map[string]string)}
-	MaxSizePerCallExceeded         = Error{"Max size per call exceeded the marked threshold", "Call too big to respond", 17, nil, make(map[string]string)}
+	MaxSizePerCallExceeded         = Error{"Max size per call exceeded the marked threshold", "Call exceeded size allowed", 17, nil, make(map[string]string)}
 )
 
 type Error struct {

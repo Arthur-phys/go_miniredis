@@ -39,9 +39,19 @@ func (w *Worker) handleConnection(c *net.Conn) {
 	for {
 		finalResponse := []byte{}
 		_, err := parser.Read()
-		if err.Code != 0 {
+		if err.Code == 15 {
 			// Stopped any Conn error here, incluiding EOF, Broken Pipe, etc.
 			return
+		} else if err.Code == 17 {
+			// Too big of a command
+			_, err := (*c).Write(rt.ErrToBytes(err))
+			if err != nil {
+				slog.Error("An error occurred while sending error response to client", "ERROR", err,
+					slog.Uint64("WORKER_ID", w.id),
+					slog.String("CLIENT", (*c).RemoteAddr().String()),
+				)
+			}
+			continue
 		}
 		commands, err := parser.ParseCommand()
 		// if the buffer was exhausted, do not return an error

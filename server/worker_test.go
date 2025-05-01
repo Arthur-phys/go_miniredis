@@ -39,7 +39,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_In_A_Single_Package(t *testing.T) {
+func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_In_A_Single_Segment(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -64,7 +64,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Multiple_Packages(t *testing.T) {
+func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Multiple_Segments(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -96,7 +96,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Even_More_Packages(t *testing.T) {
+func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Even_More_Segments(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -200,6 +200,97 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple
 	if response[0] != '-' {
 		t.Errorf("Unexpected response! %v", string(response))
 	}
+}
+
+func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Command_Size(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	workerInstantiator := NewWorkerInstantiator()
+	cacheStore := caches.NewSimpleCacheStore()
+	channel := make(chan net.Conn)
+	newWorker := workerInstantiator(cacheStore, channel, 50, 1)
+
+	var genericConn net.Conn
+	newConnection := newMockConnection()
+	defer newConnection.Close()
+	genericConn = &newConnection
+	go func() {
+		newWorker.handleConnection(&genericConn)
+	}()
+
+	newConnection.writeAsClient(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n*2\r\n$3\r\nGET\r\n$1\r\nB\r\n"))
+	response := make([]byte, 1024)
+	n, err := newConnection.readAsClient(response)
+	if string(response[:n]) != "-Call exceeded size allowed\r\n" {
+		t.Errorf("Unexpected message received! %v - %v", string(response), err)
+	}
+}
+
+func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Command_Size_In_Subsecuent_Command(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	workerInstantiator := NewWorkerInstantiator()
+	cacheStore := caches.NewSimpleCacheStore()
+	channel := make(chan net.Conn)
+	newWorker := workerInstantiator(cacheStore, channel, 36, 1)
+
+	var genericConn net.Conn
+	newConnection := newMockConnection()
+	defer newConnection.Close()
+	genericConn = &newConnection
+	go func() {
+		newWorker.handleConnection(&genericConn)
+	}()
+
+	newConnection.writeAsClient(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n*2"))
+	response := make([]byte, 1024)
+	n, _ := newConnection.readAsClient(response)
+	if string(response[:n]) != "_\r\n" {
+		t.Errorf("Unexpected message received! %v", string(response))
+	}
+
+	response = make([]byte, 1024)
+	newConnection.writeAsClient(fmt.Appendf([]byte{}, "\r\n$3\r\nGET\r\n$1\r\nB\r\n"))
+	n, err := newConnection.readAsClient(response)
+	if string(response[:n]) != "-Call exceeded size allowed\r\n" {
+		t.Errorf("Unexpected message received! %v - %v", string(response), err)
+	}
+
+}
+
+func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Exceeding_Command_Size_But_Sending_Commands_Sepparated(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	workerInstantiator := NewWorkerInstantiator()
+	cacheStore := caches.NewSimpleCacheStore()
+	channel := make(chan net.Conn)
+	newWorker := workerInstantiator(cacheStore, channel, 36, 1)
+
+	var genericConn net.Conn
+	newConnection := newMockConnection()
+	defer newConnection.Close()
+	genericConn = &newConnection
+	go func() {
+		newWorker.handleConnection(&genericConn)
+	}()
+
+	newConnection.writeAsClient(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"))
+	response := make([]byte, 1024)
+	n, _ := newConnection.readAsClient(response)
+	if string(response[:n]) != "_\r\n" {
+		t.Errorf("Unexpected message received! %v", string(response))
+	}
+
+	response = make([]byte, 1024)
+	newConnection.writeAsClient(fmt.Appendf([]byte{}, "*2\r\n$3\r\nGET\r\n$1\r\nB\r\n"))
+	n, _ = newConnection.readAsClient(response)
+	if string(response[:n]) != "$7\r\ncrayoli\r\n" {
+		t.Errorf("Unexpected message received! %v", string(response))
+	}
+
 }
 
 type mockConnection struct {
