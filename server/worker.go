@@ -38,7 +38,6 @@ func (w *Worker) handleConnection(c *net.Conn) {
 	parser := w.parseInstantiator(c, w.maxBytesPerCallAllowed)
 
 	for {
-		fmt.Println("Waiting on read")
 		finalResponse := []byte{}
 		_, err := parser.Read()
 		if err.Code != 0 {
@@ -47,7 +46,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 		}
 		commands, err := parser.ParseCommand()
 		// if the buffer was exhausted, do not return an error
-		if err.Code != 0 && err.Code != 3 && err.Code != 4 {
+		if err.Code != 0 && err.Code != 3 && err.Code != 4 && err.Code != 8 {
 			// Command malformed, return immediately
 			slog.Error("An error occurred while parsing the command", "ERROR", err,
 				slog.Uint64("WORKER_ID", w.id),
@@ -63,6 +62,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			return
 		}
 		// Proceed with evaluation
+		fmt.Printf("Are there any commands? - %d\n", len(commands))
 		for _, command := range commands {
 			w.cacheStore.Lock()
 			res, err := command(w.cacheStore)
@@ -87,6 +87,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			)
 			return
 		}
+		fmt.Printf("Passed evaluation of commands & writing\n")
 		(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	}
 }
