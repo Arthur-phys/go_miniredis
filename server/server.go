@@ -40,10 +40,10 @@ func MakeServer(
 	ipAddress string,
 	port uint16,
 	cacheStoreInstantiator func() coreinterface.CacheStore,
-	workerInstantiator func(c coreinterface.CacheStore, jobs chan net.Conn, maxBytesPerCallAllowed int, timeout uint) Worker,
+	workerInstantiator func(c coreinterface.CacheStore, jobs chan net.Conn, maxBytesPerCallAllowed int, timeout int64) Worker,
 	maxBytesPerCallAllowed int,
 	workerNumber uint,
-	keepAlive uint,
+	keepAlive int64,
 ) (Server, error) {
 	var server Server
 

@@ -13,7 +13,7 @@ type Worker struct {
 	cacheStore             coreinterface.CacheStore
 	parseInstantiator      func(c *net.Conn, maxBytesPerCallAllowed int) *parser.RESPParser
 	connectionChannel      chan net.Conn
-	timeout                uint
+	timeout                int64
 	id                     uint64
 	maxBytesPerCallAllowed int
 }
@@ -22,10 +22,10 @@ func NewWorkerInstantiator() func(
 	cacheStore coreinterface.CacheStore,
 	connectionChannel chan net.Conn,
 	maxBytesPerCallAllowed int,
-	timeout uint,
+	timeout int64,
 ) Worker {
 	var i uint64 = 0
-	return func(CacheStore coreinterface.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout uint) Worker {
+	return func(CacheStore coreinterface.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout int64) Worker {
 		i++
 		return Worker{CacheStore, parser.NewRESPParser, connectionChannel, timeout, i, maxBytesPerCallAllowed}
 	}
