@@ -62,6 +62,12 @@ func (c *SimpleCache) RPop(key string) (string, e.Error) {
 }
 
 func (c *SimpleCache) LPush(key string, args ...string) e.Error {
+	i, j := 0, len(args)-1
+	for i < j {
+		args[i], args[j] = args[j], args[i]
+		i++
+		j--
+	}
 	if _, ok := c.arrayDictionary[key]; ok {
 		c.arrayDictionary[key] = append(args, c.arrayDictionary[key]...)
 	} else {
@@ -88,7 +94,7 @@ func (c *SimpleCache) LPop(key string) (string, e.Error) {
 func (c *SimpleCache) LIndex(key string, index int) (string, e.Error) {
 	if v, ok := c.arrayDictionary[key]; ok && len(v) > index && index >= 0 {
 		return v[index], e.Error{}
-	} else if len(v) > index || index < 0 {
+	} else if len(v) < index || index < 0 {
 		err := e.IndexOutOfRange
 		err.ExtraContext = map[string]string{"index": fmt.Sprintf("%d", index)}
 		return "", err

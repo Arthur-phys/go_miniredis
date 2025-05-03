@@ -304,6 +304,8 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			if val, err := d.Get(arr[1]); err.Code == 0 {
 				return rt.BlobStringToBytes(val), e.Error{}
+			} else if err.Code == 1 {
+				return rt.NullToBytes(), e.Error{}
 			} else {
 				return []byte{}, err
 			}
@@ -345,10 +347,12 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 		}
 		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			val, err := d.RPop(arr[1])
-			if err.Code != 0 {
-				return []byte{}, err
+			if err.Code == 0 {
+				return rt.BlobStringToBytes(val), e.Error{}
+			} else if err.Code == 1 {
+				return rt.NullToBytes(), e.Error{}
 			}
-			return rt.BlobStringToBytes(val), e.Error{}
+			return []byte{}, err
 		}, e.Error{}
 	case "LPUSH":
 		if len(arr) < 3 {
@@ -373,10 +377,12 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 		}
 		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			val, err := d.LPop(arr[1])
-			if err.Code != 0 {
-				return []byte{}, err // Propper error handling
+			if err.Code == 0 {
+				return rt.BlobStringToBytes(val), e.Error{}
+			} else if err.Code == 1 {
+				return rt.NullToBytes(), e.Error{}
 			}
-			return rt.BlobStringToBytes(val), e.Error{}
+			return []byte{}, err
 		}, e.Error{}
 	case "LLEN":
 		if len(arr) != 2 {
@@ -408,10 +414,12 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 				return []byte{}, newErr
 			}
 			val, newErr := d.LIndex(arr[1], index)
-			if newErr.Code != 0 {
-				return []byte{}, newErr
+			if newErr.Code == 0 {
+				return rt.BlobStringToBytes(val), e.Error{}
+			} else if newErr.Code == 1 || newErr.Code == 2 {
+				return rt.NullToBytes(), e.Error{}
 			}
-			return rt.BlobStringToBytes(val), e.Error{}
+			return []byte{}, newErr
 		}, e.Error{}
 	default:
 		newErr := e.FunctionNotFound

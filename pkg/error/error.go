@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	KeyNotFoundInDictionary        = Error{"Key not found in dictionary", "Key not found in dictionary", 1, nil, make(map[string]string)}
-	IndexOutOfRange                = Error{"Index set is out of range", "Index set is out of range", 2, nil, make(map[string]string)}
+	KeyNotFoundInDictionary        = Error{"Key not found in dictionary", "", 1, nil, make(map[string]string)}
+	IndexOutOfRange                = Error{"Index set is out of range", "", 2, nil, make(map[string]string)}
 	UnableToReadFirstByte          = Error{"Unable to read first byte", "", 3, nil, make(map[string]string)}
 	UnableToFindPattern            = Error{"Unable to find byte pattern in byte stream", "", 4, nil, make(map[string]string)}
 	UnexpectedFirstByte            = Error{"First byte was different from expected", "Command malformed", 5, nil, make(map[string]string)}
