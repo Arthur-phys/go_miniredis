@@ -12,7 +12,7 @@ func main() {
 		"127.0.0.1",
 		8000,
 		caches.NewSimpleCache,
-		server.NewInstantiator(),
+		server.NewWorkerInstantiator(),
 		10240,
 		2,
 		15,

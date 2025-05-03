@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
+	rt "github.com/Arthur-phys/redigo/pkg/core/tobytes"
 	e "github.com/Arthur-phys/redigo/pkg/error"
-	rt "github.com/Arthur-phys/redigo/pkg/tobytes"
 )
 
 type RESPParser struct {

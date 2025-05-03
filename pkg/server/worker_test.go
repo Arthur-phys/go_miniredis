@@ -19,7 +19,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
@@ -44,7 +44,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
@@ -69,7 +69,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
@@ -101,7 +101,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
@@ -135,7 +135,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Partitioned
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
@@ -182,7 +182,7 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
@@ -207,7 +207,7 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Com
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 50, 1)
@@ -232,7 +232,7 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Com
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 36, 1)
@@ -265,7 +265,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Exceeding_C
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewInstantiator()
+	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := workerInstantiator(cacheStore, channel, 36, 1)

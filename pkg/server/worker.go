@@ -7,7 +7,7 @@ import (
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
 	"github.com/Arthur-phys/redigo/pkg/core/respparser"
-	rt "github.com/Arthur-phys/redigo/pkg/tobytes"
+	rt "github.com/Arthur-phys/redigo/pkg/core/tobytes"
 )
 
 type Worker struct {
@@ -19,7 +19,7 @@ type Worker struct {
 	maxBytesPerCallAllowed int
 }
 
-func NewInstantiator() func(
+func NewWorkerInstantiator() func(
 	cacheStore interfaces.CacheStore,
 	connectionChannel chan net.Conn,
 	maxBytesPerCallAllowed int,
