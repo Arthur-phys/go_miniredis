@@ -4,25 +4,25 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
+	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
 	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
-type SimpleCacheStore struct {
+type SimpleCache struct {
 	internalLock     sync.Mutex
 	simpleDictionary map[string]string
 	arrayDictionary  map[string][]string
 }
 
-func NewSimpleCacheStore() coreinterface.CacheStore {
-	return &SimpleCacheStore{
+func NewSimpleCache() interfaces.CacheStore {
+	return &SimpleCache{
 		sync.Mutex{},
 		make(map[string]string),
 		make(map[string][]string),
 	}
 }
 
-func (c *SimpleCacheStore) Get(key string) (string, e.Error) {
+func (c *SimpleCache) Get(key string) (string, e.Error) {
 	if v, ok := c.simpleDictionary[key]; ok {
 		return v, e.Error{}
 	} else {
@@ -32,12 +32,12 @@ func (c *SimpleCacheStore) Get(key string) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCacheStore) Set(key string, value string) e.Error {
+func (c *SimpleCache) Set(key string, value string) e.Error {
 	c.simpleDictionary[key] = value
 	return e.Error{}
 }
 
-func (c *SimpleCacheStore) RPush(key string, args ...string) e.Error {
+func (c *SimpleCache) RPush(key string, args ...string) e.Error {
 	if _, ok := c.arrayDictionary[key]; ok {
 		c.arrayDictionary[key] = append(c.arrayDictionary[key], args...)
 	} else {
@@ -46,7 +46,7 @@ func (c *SimpleCacheStore) RPush(key string, args ...string) e.Error {
 	return e.Error{}
 }
 
-func (c *SimpleCacheStore) RPop(key string) (string, e.Error) {
+func (c *SimpleCache) RPop(key string) (string, e.Error) {
 	var x string
 	if v, ok := c.arrayDictionary[key]; ok {
 		x, c.arrayDictionary[key] = v[len(v)-1], v[:len(v)-1]
@@ -61,7 +61,7 @@ func (c *SimpleCacheStore) RPop(key string) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCacheStore) LPush(key string, args ...string) e.Error {
+func (c *SimpleCache) LPush(key string, args ...string) e.Error {
 	if _, ok := c.arrayDictionary[key]; ok {
 		c.arrayDictionary[key] = append(args, c.arrayDictionary[key]...)
 	} else {
@@ -70,7 +70,7 @@ func (c *SimpleCacheStore) LPush(key string, args ...string) e.Error {
 	return e.Error{}
 }
 
-func (c *SimpleCacheStore) LPop(key string) (string, e.Error) {
+func (c *SimpleCache) LPop(key string) (string, e.Error) {
 	var x string
 	if v, ok := c.arrayDictionary[key]; ok {
 		x, c.arrayDictionary[key] = v[0], v[1:]
@@ -85,7 +85,7 @@ func (c *SimpleCacheStore) LPop(key string) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCacheStore) LIndex(key string, index int) (string, e.Error) {
+func (c *SimpleCache) LIndex(key string, index int) (string, e.Error) {
 	if v, ok := c.arrayDictionary[key]; ok && len(v) > index && index >= 0 {
 		return v[index], e.Error{}
 	} else if len(v) > index || index < 0 {
@@ -99,14 +99,14 @@ func (c *SimpleCacheStore) LIndex(key string, index int) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCacheStore) LLen(key string) (int, e.Error) {
+func (c *SimpleCache) LLen(key string) (int, e.Error) {
 	return len(c.arrayDictionary[key]), e.Error{}
 }
 
-func (c *SimpleCacheStore) Lock() {
+func (c *SimpleCache) Lock() {
 	c.internalLock.Lock()
 }
 
-func (c *SimpleCacheStore) Unlock() {
+func (c *SimpleCache) Unlock() {
 	c.internalLock.Unlock()
 }

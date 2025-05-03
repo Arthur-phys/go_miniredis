@@ -5,41 +5,41 @@ import (
 	"net"
 	"time"
 
-	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
-	"github.com/Arthur-phys/redigo/pkg/core/parser"
+	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
+	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 	rt "github.com/Arthur-phys/redigo/pkg/tobytes"
 )
 
 type Worker struct {
-	cacheStore             coreinterface.CacheStore
-	parseInstantiator      func(c *net.Conn, maxBytesPerCallAllowed int) *parser.RESPParser
+	cacheStore             interfaces.CacheStore
+	parseInstantiator      func(c *net.Conn, maxBytesPerCallAllowed int) *respparser.RESPParser
 	connectionChannel      chan net.Conn
 	timeout                int64
 	id                     uint64
 	maxBytesPerCallAllowed int
 }
 
-func NewWorkerInstantiator() func(
-	cacheStore coreinterface.CacheStore,
+func NewInstantiator() func(
+	cacheStore interfaces.CacheStore,
 	connectionChannel chan net.Conn,
 	maxBytesPerCallAllowed int,
 	timeout int64,
 ) Worker {
 	var i uint64 = 0
-	return func(CacheStore coreinterface.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout int64) Worker {
+	return func(CacheStore interfaces.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout int64) Worker {
 		i++
-		return Worker{CacheStore, parser.NewRESPParser, connectionChannel, timeout, i, maxBytesPerCallAllowed}
+		return Worker{CacheStore, respparser.New, connectionChannel, timeout, i, maxBytesPerCallAllowed}
 	}
 }
 
 func (w *Worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
-	parser := w.parseInstantiator(c, w.maxBytesPerCallAllowed)
+	respparser := w.parseInstantiator(c, w.maxBytesPerCallAllowed)
 
 	for {
 		finalResponse := []byte{}
-		_, err := parser.Read()
+		_, err := respparser.Read()
 		if err.Code == 15 {
 			// Stopped any Conn error here, incluiding EOF, Broken Pipe, etc.
 			return
@@ -54,7 +54,7 @@ func (w *Worker) handleConnection(c *net.Conn) {
 			}
 			continue
 		}
-		commands, err := parser.ParseCommand()
+		commands, err := respparser.ParseCommand()
 		// if the buffer was exhausted, do not return an error
 		if err.Code != 0 && err.Code != 3 && err.Code != 4 && err.Code != 8 {
 			// Command malformed, return immediately

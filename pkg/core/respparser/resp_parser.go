@@ -1,4 +1,4 @@
-package parser
+package respparser
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
+	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
 	e "github.com/Arthur-phys/redigo/pkg/error"
 	rt "github.com/Arthur-phys/redigo/pkg/tobytes"
 )
@@ -25,7 +25,7 @@ type RESPParser struct {
 	lastCommandUnprocessed bool
 }
 
-func NewRESPParser(conn *net.Conn, maxBytesAllowed int) *RESPParser {
+func New(conn *net.Conn, maxBytesAllowed int) *RESPParser {
 	rawBuffer := make([]byte, 4096)
 	lastCommand := []byte{}
 	buffer := bufio.NewReader(bytes.NewReader(rawBuffer))
@@ -67,13 +67,13 @@ func (r *RESPParser) Read() (int, e.Error) {
 	return n, e.Error{}
 }
 
-func (r *RESPParser) ParseCommand() ([]func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
-	commands := []func(d coreinterface.CacheStore) ([]byte, e.Error){}
+func (r *RESPParser) ParseCommand() ([]func(d interfaces.CacheStore) ([]byte, e.Error), e.Error) {
+	commands := []func(d interfaces.CacheStore) ([]byte, e.Error){}
 	var internalParser func() e.Error
 
 	internalParser = func() e.Error {
 		strArr, n, err := ParseArray(r, func(r *RESPParser) (string, int, e.Error) {
-			return r.BlobStringFromBytes()
+			return r.ParseBlobString()
 		})
 		if n == 0 {
 			return err
@@ -102,7 +102,7 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 
 	newErr := r.checkFirstByte('*')
 	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return nil, 0, r.errorFromBytes()
+		return nil, 0, r.parseError()
 	} else if newErr.Code != 0 {
 		return nil, totalBytesRead, newErr
 	}
@@ -135,12 +135,12 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 
 }
 
-func (r *RESPParser) BlobStringFromBytes() (string, int, e.Error) {
+func (r *RESPParser) ParseBlobString() (string, int, e.Error) {
 	totalBytesRead := 0
 
 	newErr := r.checkFirstByte('$')
 	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return "", 0, r.errorFromBytes()
+		return "", 0, r.parseError()
 	} else if newErr.Code != 0 {
 		return "", totalBytesRead, newErr
 	}
@@ -179,12 +179,12 @@ func (r *RESPParser) BlobStringFromBytes() (string, int, e.Error) {
 	return string(blobString), totalBytesRead, e.Error{}
 }
 
-func (r *RESPParser) NullFromBytes() (int, e.Error) {
+func (r *RESPParser) ParseNull() (int, e.Error) {
 	totalBytesRead := 0
 
 	newErr := r.checkFirstByte('_')
 	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return 0, r.errorFromBytes()
+		return 0, r.parseError()
 	} else if newErr.Code != 0 {
 		return totalBytesRead, newErr
 	}
@@ -202,12 +202,12 @@ func (r *RESPParser) NullFromBytes() (int, e.Error) {
 	return totalBytesRead, e.Error{}
 }
 
-func (r *RESPParser) UIntFromBytes() (int, int, e.Error) {
+func (r *RESPParser) ParseUInt() (int, int, e.Error) {
 	totalBytesRead := 0
 
 	newErr := r.checkFirstByte(':')
 	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return 0, 0, r.errorFromBytes()
+		return 0, 0, r.parseError()
 	} else if newErr.Code != 0 {
 		return 0, totalBytesRead, newErr
 	}
@@ -245,7 +245,7 @@ func (r *RESPParser) checkFirstByte(b byte) e.Error {
 	return e.Error{}
 }
 
-func (r *RESPParser) errorFromBytes() e.Error {
+func (r *RESPParser) parseError() e.Error {
 	errorReceived, _, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
 	if newErr.Code != 0 {
 		return newErr
@@ -290,8 +290,8 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, e.Error) {
 	return bytes, totalBytesRead, err
 }
 
-func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.Error), e.Error) {
-	var f func(d coreinterface.CacheStore) ([]byte, e.Error)
+func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Error), e.Error) {
+	var f func(d interfaces.CacheStore) ([]byte, e.Error)
 	var newErr e.Error
 	switch arr[0] {
 	case "GET":
@@ -301,7 +301,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			if val, err := d.Get(arr[1]); err.Code == 0 {
 				return rt.BlobStringToBytes(val), e.Error{}
 			} else {
@@ -315,7 +315,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			err := d.Set(arr[1], arr[2])
 			if err.Code != 0 {
 				return []byte{}, err
@@ -329,7 +329,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			err := d.RPush(arr[1], arr[2:]...)
 			if err.Code != 0 {
 				return []byte{}, err
@@ -343,7 +343,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			val, err := d.RPop(arr[1])
 			if err.Code != 0 {
 				return []byte{}, err
@@ -357,7 +357,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			err := d.LPush(arr[1], arr[2:]...)
 			if err.Code != 0 {
 				return []byte{}, err
@@ -371,7 +371,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			val, err := d.LPop(arr[1])
 			if err.Code != 0 {
 				return []byte{}, err // Propper error handling
@@ -385,7 +385,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			val, err := d.LLen(arr[1])
 			if err.Code != 0 {
 				return []byte{}, err
@@ -399,7 +399,7 @@ func selectFunction(arr []string) (func(d coreinterface.CacheStore) ([]byte, e.E
 			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, newErr
 		}
-		return func(d coreinterface.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
 			index, err := strconv.Atoi(arr[2])
 			if err != nil {
 				newErr := e.UnableToConvertIndexToInt

@@ -8,13 +8,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
+	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
 	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 type Server struct {
 	listener          net.Listener
-	cacheStore        coreinterface.CacheStore
+	cacheStore        interfaces.CacheStore
 	connectionChannel chan net.Conn
 }
 
@@ -37,11 +37,11 @@ func (s *Server) Run() {
 		}
 	}
 }
-func MakeServer(
+func New(
 	ipAddress string,
 	port uint16,
-	cacheStoreInstantiator func() coreinterface.CacheStore,
-	workerInstantiator func(c coreinterface.CacheStore, jobs chan net.Conn, maxBytesPerCallAllowed int, timeout int64) Worker,
+	cacheStoreInstantiator func() interfaces.CacheStore,
+	workerInstantiator func(c interfaces.CacheStore, jobs chan net.Conn, maxBytesPerCallAllowed int, timeout int64) Worker,
 	maxBytesPerCallAllowed int,
 	workerNumber uint,
 	keepAlive int64,

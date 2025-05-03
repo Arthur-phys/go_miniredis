@@ -8,11 +8,11 @@ import (
 )
 
 func main() {
-	s, err := server.MakeServer(
+	s, err := server.New(
 		"127.0.0.1",
 		8000,
-		caches.NewSimpleCacheStore,
-		server.NewWorkerInstantiator(),
+		caches.NewSimpleCache,
+		server.NewInstantiator(),
 		10240,
 		2,
 		15,

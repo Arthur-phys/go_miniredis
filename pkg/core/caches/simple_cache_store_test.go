@@ -5,7 +5,7 @@ import (
 )
 
 func TestSet_Should_Return_NIL_When_Set_Is_Done(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.Set("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -13,14 +13,14 @@ func TestSet_Should_Return_NIL_When_Set_Is_Done(t *testing.T) {
 }
 
 func TestGet_Should_Return_Error_When_Key_Not_Present(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	if _, err := cs.Get("key"); err.Code == 0 {
 		t.Errorf("A key is present when it should not be!")
 	}
 }
 
 func TestGet_Should_Return_Value_And_Nil_When_Key_Is_Present(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.Set("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -30,8 +30,8 @@ func TestGet_Should_Return_Value_And_Nil_When_Key_Is_Present(t *testing.T) {
 	}
 }
 
-func TestRPush_Should_Create_New_List_In_Cache_When_Not_Present(t *testing.T) {
-	cs := NewSimpleCacheStore()
+func TestRPush_Should_Create_NewSimpleCache_List_In_Cache_When_Not_Present(t *testing.T) {
+	cs := NewSimpleCache()
 	err := cs.RPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -42,7 +42,7 @@ func TestRPush_Should_Create_New_List_In_Cache_When_Not_Present(t *testing.T) {
 }
 
 func TestRPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.RPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -57,14 +57,14 @@ func TestRPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
 }
 
 func TestRPop_Should_Return_Error_When_List_Is_Not_Present(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	if _, err := cs.RPop("key"); err.Code == 0 {
 		t.Errorf("Expected error but obtained nil! %v", err)
 	}
 }
 
 func TestRPop_Should_Delete_List_When_Empty(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.RPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -78,7 +78,7 @@ func TestRPop_Should_Delete_List_When_Empty(t *testing.T) {
 }
 
 func TestRPop_Should_Remove_Elements_In_Succession(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.RPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -99,7 +99,7 @@ func TestRPop_Should_Remove_Elements_In_Succession(t *testing.T) {
 }
 
 func TestLPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.LPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -114,7 +114,7 @@ func TestLPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
 }
 
 func TestLPop_Should_Delete_List_When_Empty(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.LPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -128,7 +128,7 @@ func TestLPop_Should_Delete_List_When_Empty(t *testing.T) {
 }
 
 func TestLPop_Should_Remove_Elements_In_Succession(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.LPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -149,14 +149,14 @@ func TestLPop_Should_Remove_Elements_In_Succession(t *testing.T) {
 }
 
 func TestLPop_Should_Return_Error_When_List_Is_Not_Present(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	if _, err := cs.LPop("key"); err.Code == 0 {
 		t.Errorf("Expected error but obtained nil! %v", err)
 	}
 }
 
 func TestLIndex_Should_Return_Element_When_Present_In_List(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.LPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
@@ -175,7 +175,7 @@ func TestLIndex_Should_Return_Element_When_Present_In_List(t *testing.T) {
 }
 
 func TestLIndex_Should_Return_Error_When_Index_Not_Present_In_List(t *testing.T) {
-	cs := NewSimpleCacheStore()
+	cs := NewSimpleCache()
 	err := cs.LPush("key", "value")
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)

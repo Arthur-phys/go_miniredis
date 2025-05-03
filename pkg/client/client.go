@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Arthur-phys/redigo/pkg/core/parser"
+	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 type Client struct {
 	conn   *net.Conn
 	buffer *bufio.Reader
-	p      *parser.RESPParser
+	p      *respparser.RESPParser
 }
 
-func NewClient(conn *net.Conn) Client {
-	return Client{conn, bufio.NewReader(*conn), parser.NewRESPParser(conn, 10240)}
+func New(conn *net.Conn) Client {
+	return Client{conn, bufio.NewReader(*conn), respparser.New(conn, 10240)}
 }
 
 func (client *Client) Get(key string) (string, e.Error) {
@@ -29,7 +29,7 @@ func (client *Client) Get(key string) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-	result, _, err := client.p.BlobStringFromBytes()
+	result, _, err := client.p.ParseBlobString()
 	return result, err
 }
 
@@ -43,7 +43,7 @@ func (client *Client) Set(key string, value string) e.Error {
 	if err.Code != 0 {
 		return err
 	}
-	_, err = client.p.NullFromBytes()
+	_, err = client.p.ParseNull()
 	return err
 }
 
@@ -61,7 +61,7 @@ func (client *Client) RPush(key string, args ...string) e.Error {
 	if err.Code != 0 {
 		return err
 	}
-	_, err = client.p.NullFromBytes()
+	_, err = client.p.ParseNull()
 	return err
 }
 
@@ -75,7 +75,7 @@ func (client *Client) RPop(key string) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-	result, _, err := client.p.BlobStringFromBytes()
+	result, _, err := client.p.ParseBlobString()
 	return result, err
 }
 
@@ -89,7 +89,7 @@ func (client *Client) LLen(key string) (int, e.Error) {
 	if err.Code != 0 {
 		return 0, err
 	}
-	result, _, err := client.p.UIntFromBytes()
+	result, _, err := client.p.ParseUInt()
 	return result, err
 }
 
@@ -103,7 +103,7 @@ func (client *Client) LPop(key string) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-	result, _, err := client.p.BlobStringFromBytes()
+	result, _, err := client.p.ParseBlobString()
 	return result, err
 }
 
@@ -121,7 +121,7 @@ func (client *Client) LPush(key string, args ...string) e.Error {
 	if err.Code != 0 {
 		return err
 	}
-	_, err = client.p.NullFromBytes()
+	_, err = client.p.ParseNull()
 	return err
 }
 
@@ -135,7 +135,7 @@ func (client *Client) LIndex(key string, index int) (string, e.Error) {
 	if err.Code != 0 {
 		return "", err
 	}
-	result, _, err := client.p.BlobStringFromBytes()
+	result, _, err := client.p.ParseBlobString()
 	return result, err
 }
 

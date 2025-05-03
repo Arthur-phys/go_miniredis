@@ -1,4 +1,4 @@
-package coreinterface
+package interfaces
 
 import (
 	e "github.com/Arthur-phys/redigo/pkg/error"

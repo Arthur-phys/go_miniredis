@@ -12,7 +12,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Fatal error occurred! %v", err)
 	}
-	c := client.NewClient(&conn)
+	c := client.New(&conn)
 	e := c.Set("Arturo", "26")
 	if e.Code != 0 {
 		fmt.Printf("Fatal error occurred! %v - %e\n", e, e.From)
