@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package server
 
 import (
@@ -14,7 +17,7 @@ import (
 	"github.com/Arthur-phys/redigo/pkg/core/caches"
 )
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Single_One(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Single_One(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
@@ -40,7 +43,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_In_A_Single_Segment(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_In_A_Single_Segment(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -65,7 +68,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Multiple_Segments(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Multiple_Segments(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -97,7 +100,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Even_More_Segments(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multiple_Commands_In_Even_More_Segments(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -131,7 +134,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_Multip
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Partitioned_In_Different_Ways(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When_Partitioned_In_Different_Ways(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -178,7 +181,7 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Partitioned
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple_Commands_With_One_Wrong(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple_Commands_With_One_Wrong(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -203,7 +206,7 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Sent_Multiple
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Command_Size(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Command_Size(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -228,7 +231,7 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Com
 	}
 }
 
-func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Command_Size_In_Subsecuent_Command(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Command_Size_In_Subsecuent_Command(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
@@ -261,7 +264,7 @@ func TestWorkerhandleConnection_Should_Return_Error_To_Client_When_Exceeding_Com
 
 }
 
-func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Exceeding_Command_Size_But_Sending_Commands_Sepparated(t *testing.T) {
+func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When_Exceeding_Command_Size_But_Sending_Commands_Sepparated(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
