@@ -2,8 +2,9 @@ package main
 
 import (
 	"log/slog"
-	"miniredis/core/caches"
-	"miniredis/server"
+
+	"github.com/Arthur-phys/redigo/pkg/core/caches"
+	"github.com/Arthur-phys/redigo/pkg/server"
 )
 
 func main() {

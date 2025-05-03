@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"miniredis/client"
 	"net"
+
+	"github.com/Arthur-phys/redigo/pkg/client"
 )
 
 func main() {

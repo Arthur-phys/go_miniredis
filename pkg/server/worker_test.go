@@ -5,12 +5,13 @@ import (
 	"io"
 	"log/slog"
 	"math"
-	"miniredis/core/caches"
 	"net"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/Arthur-phys/redigo/pkg/core/caches"
 )
 
 func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Single_One(t *testing.T) {
@@ -27,10 +28,10 @@ func TestWorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Sing
 	newConnection := newMockConnection()
 	defer newConnection.Close()
 	genericConn = &newConnection
+
 	go func() {
 		newWorker.handleConnection(&genericConn)
 	}()
-
 	newConnection.writeAsClient(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nB\r\n$7\r\ncrayoli\r\n"))
 	response := make([]byte, 1024)
 	n, _ := newConnection.readAsClient(response)

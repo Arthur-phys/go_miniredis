@@ -2,9 +2,10 @@ package caches
 
 import (
 	"fmt"
-	"miniredis/core/coreinterface"
-	e "miniredis/error"
 	"sync"
+
+	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
+	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 type SimpleCacheStore struct {

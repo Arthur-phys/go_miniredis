@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"miniredis/core/coreinterface"
-	e "miniredis/error"
-	rt "miniredis/tobytes"
 	"net"
 	"strconv"
+
+	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
+	e "github.com/Arthur-phys/redigo/pkg/error"
+	rt "github.com/Arthur-phys/redigo/pkg/tobytes"
 )
 
 type RESPParser struct {

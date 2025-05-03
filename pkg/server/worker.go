@@ -2,11 +2,12 @@ package server
 
 import (
 	"log/slog"
-	"miniredis/core/coreinterface"
-	"miniredis/core/parser"
-	rt "miniredis/tobytes"
 	"net"
 	"time"
+
+	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
+	"github.com/Arthur-phys/redigo/pkg/core/parser"
+	rt "github.com/Arthur-phys/redigo/pkg/tobytes"
 )
 
 type Worker struct {

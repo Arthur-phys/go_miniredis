@@ -1,7 +1,7 @@
 package coreinterface
 
 import (
-	e "miniredis/error"
+	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 type CacheStore interface {

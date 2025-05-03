@@ -3,9 +3,10 @@ package client
 import (
 	"bufio"
 	"fmt"
-	"miniredis/core/parser"
-	e "miniredis/error"
 	"net"
+
+	"github.com/Arthur-phys/redigo/pkg/core/parser"
+	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 type Client struct {

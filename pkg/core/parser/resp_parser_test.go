@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	e "miniredis/error"
 	"testing"
+
+	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 func Test_ParseCommand_Should_Not_Return_Err_When_Passed_Valid_Command_As_Bytes(t *testing.T) {

@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"miniredis/core/coreinterface"
-	e "miniredis/error"
 	"net"
 	"os"
 	"time"
+
+	"github.com/Arthur-phys/redigo/pkg/core/coreinterface"
+	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 type Server struct {

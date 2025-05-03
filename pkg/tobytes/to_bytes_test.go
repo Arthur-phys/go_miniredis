@@ -2,8 +2,9 @@ package tobytes
 
 import (
 	"fmt"
-	e "miniredis/error"
 	"testing"
+
+	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 func TestBlobStringToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
