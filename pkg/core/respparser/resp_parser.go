@@ -101,9 +101,7 @@ func ParseArray[T any](r *RESPParser, f func(r *RESPParser) (T, int, e.Error)) (
 	var arr []T
 
 	newErr := r.checkFirstByte('*')
-	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return nil, 0, r.parseError()
-	} else if newErr.Code != 0 {
+	if newErr.Code != 0 {
 		return nil, totalBytesRead, newErr
 	}
 	totalBytesRead += 1
@@ -139,9 +137,7 @@ func (r *RESPParser) ParseBlobString() (string, int, e.Error) {
 	totalBytesRead := 0
 
 	newErr := r.checkFirstByte('$')
-	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return "", 0, r.parseError()
-	} else if newErr.Code != 0 {
+	if newErr.Code != 0 {
 		return "", totalBytesRead, newErr
 	}
 	totalBytesRead += 1
@@ -183,9 +179,7 @@ func (r *RESPParser) ParseNull() (int, e.Error) {
 	totalBytesRead := 0
 
 	newErr := r.checkFirstByte('_')
-	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return 0, r.parseError()
-	} else if newErr.Code != 0 {
+	if newErr.Code != 0 {
 		return totalBytesRead, newErr
 	}
 	totalBytesRead += 1
@@ -206,9 +200,7 @@ func (r *RESPParser) ParseUInt() (int, int, e.Error) {
 	totalBytesRead := 0
 
 	newErr := r.checkFirstByte(':')
-	if newErr.Code == 5 && newErr.ExtraContext["received"] == "-" {
-		return 0, 0, r.parseError()
-	} else if newErr.Code != 0 {
+	if newErr.Code != 0 {
 		return 0, totalBytesRead, newErr
 	}
 	totalBytesRead += 1
@@ -229,6 +221,23 @@ func (r *RESPParser) ParseUInt() (int, int, e.Error) {
 	return num, totalBytesRead, e.Error{}
 }
 
+func (r *RESPParser) ParseError() (int, e.Error) {
+	totalBytesRead := 0
+	newErr := r.checkFirstByte('-')
+	if newErr.Code != 0 {
+		return totalBytesRead, newErr
+	}
+	totalBytesRead += 1
+	errorReceived, n, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
+	if newErr.Code != 0 {
+		return totalBytesRead, newErr
+	}
+	totalBytesRead += n
+	finalErr := e.ErrorReceived
+	finalErr.ExtraContext["text"] = string(errorReceived)
+	return totalBytesRead, finalErr
+}
+
 func (r *RESPParser) checkFirstByte(b byte) e.Error {
 	firstByte, err := r.buffer.ReadByte()
 	if err != nil {
@@ -237,22 +246,14 @@ func (r *RESPParser) checkFirstByte(b byte) e.Error {
 		return newErr
 	}
 	if firstByte != b {
+		err := r.buffer.UnreadByte()
 		newErr := e.UnexpectedFirstByte
+		newErr.From = err
 		newErr.ExtraContext["expected"] = string(b)
 		newErr.ExtraContext["received"] = string(firstByte)
 		return newErr
 	}
 	return e.Error{}
-}
-
-func (r *RESPParser) parseError() e.Error {
-	errorReceived, _, newErr := r.readUntilSliceFound([]byte{'\r', '\n'})
-	if newErr.Code != 0 {
-		return newErr
-	}
-	finalErr := e.ErrorReceived
-	finalErr.ExtraContext["text"] = string(errorReceived)
-	return finalErr
 }
 
 func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, e.Error) {

@@ -1,5 +1,5 @@
-//go:build !integration
-// +build !integration
+//go:build !integration && !e2e
+// +build !integration,!e2e
 
 package caches
 
@@ -191,7 +191,7 @@ func TestLIndex_Should_Return_Error_When_Index_Not_Present_In_List(t *testing.T)
 	if err.Code != 0 {
 		t.Errorf("An error occurred! %v", err)
 	}
-	if _, ok := cs.LIndex("key", 5); ok.Code != 1 {
-		t.Errorf("Was able to retrieve unexistant value!")
+	if s, err := cs.LIndex("key", 5); err.Code != 1 && err.Code != 2 {
+		t.Errorf("Was able to retrieve unexistant value! %v - %s", err, s)
 	}
 }

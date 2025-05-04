@@ -1,5 +1,5 @@
-//go:build !integration
-// +build !integration
+//go:build !integration && !e2e
+// +build !integration,!e2e
 
 package tobytes
 
