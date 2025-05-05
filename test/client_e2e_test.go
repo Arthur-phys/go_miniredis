@@ -1,75 +1,74 @@
 package e2e
 
-// import (
-// 	"fmt"
-// 	"net"
-// 	"testing"
+import (
+	"net"
+	"testing"
 
-// 	"github.com/Arthur-phys/redigo/pkg/client"
-// 	"github.com/Arthur-phys/redigo/pkg/core/caches"
-// 	"github.com/Arthur-phys/redigo/pkg/server"
-// )
+	"github.com/Arthur-phys/redigo/pkg/client"
+	"github.com/Arthur-phys/redigo/pkg/core/caches"
+	"github.com/Arthur-phys/redigo/pkg/server"
+)
 
-// func TestE2E_Client_That_Sends_A_SET_Should_Receive_Null_As_Response(t *testing.T) {
+func TestE2E_Client_That_Sends_A_SET_Should_Receive_Null_As_Response(t *testing.T) {
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	go func() {
-// 		s.Run()
-// 	}()
+	s, err := server.New(
+		"127.0.0.1",
+		8000,
+		caches.NewSimpleCache,
+		server.NewWorkerInstantiator(),
+		10240,
+		1,
+		15,
+	)
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	go func() {
+		s.Run()
+	}()
 
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	c := client.New(&conn)
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	c := client.New(&conn)
 
-// 	newErr := c.Set("R", "REDIGO")
-// 	if newErr.Code != 0 {
-// 		t.Errorf("Unexpected error occurred! %e", err)
-// 	}
+	newErr := c.Set("R", "REDIGO")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %e", err)
+	}
 
-// }
+}
 
-// func TestE2E_Client_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
+func TestE2E_Client_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	c := client.New(&conn)
+	s, err := server.New(
+		"127.0.0.1",
+		8000,
+		caches.NewSimpleCache,
+		server.NewWorkerInstantiator(),
+		10240,
+		1,
+		15,
+	)
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	go func() {
+		s.Run()
+	}()
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	c := client.New(&conn)
 
-// 	str, newErr := c.Get("R")
-// 	if newErr.Code != 0 || str != "" {
-// 		t.Errorf("Unexpected error occurred! %v, %v - %s", newErr, newErr.ExtraContext, str)
-// 	}
+	str, newErr := c.Get("R")
+	if newErr.Code != 0 || str != "" {
+		t.Errorf("Unexpected error occurred! %v, %v - %s", newErr, newErr.ExtraContext, str)
+	}
 
-// }
+}
 
 // func TestE2E_Client_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
 

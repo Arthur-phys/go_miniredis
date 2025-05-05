@@ -65,7 +65,9 @@ func TestE2E_Connection_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Prese
 	go func() {
 		s.Run()
 	}()
+	fmt.Printf("\n\nWAS I EVEN RUNNING?\n\n")
 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	fmt.Printf("\n\nDIALED\n\n")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
