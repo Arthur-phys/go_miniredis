@@ -1,3 +1,6 @@
+//go:build e2e
+// +build e2e
+
 package e2e
 
 import (
@@ -13,7 +16,7 @@ func TestE2E_Client_Full(t *testing.T) {
 
 	s, err := server.New(
 		"127.0.0.1",
-		8000,
+		8001,
 		caches.NewSimpleCache,
 		server.NewWorkerInstantiator(),
 		10240,
@@ -43,7 +46,7 @@ func TestE2E_Client_Full(t *testing.T) {
 
 func e2e_Client_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -63,7 +66,7 @@ func e2e_Client_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present(t *te
 
 func e2e_Client_That_Sends_A_SET_Should_Receive_Null_As_Response(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -83,7 +86,7 @@ func e2e_Client_That_Sends_A_SET_Should_Receive_Null_As_Response(t *testing.T) {
 
 func e2e_Client_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -106,7 +109,7 @@ func e2e_Client_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present(t *test
 
 func e2e_Client_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -130,7 +133,7 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *
 
 func e2e_Client_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -153,7 +156,7 @@ func e2e_Client_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *
 
 func e2e_Client_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -173,7 +176,7 @@ func e2e_Client_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
 
 func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -218,7 +221,7 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *te
 
 func e2e_Client_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -237,7 +240,7 @@ func e2e_Client_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
 
 func e2e_Client_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_But_Index_Is_Invalid(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -259,7 +262,7 @@ func e2e_Client_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_But_I
 
 func e2e_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And_Index_Is_Valid(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -281,7 +284,7 @@ func e2e_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And
 
 func e2e_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -302,7 +305,7 @@ func e2e_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present(t 
 
 func e2e_Client_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
