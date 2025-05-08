@@ -13,6 +13,7 @@ type CacheStore interface {
 	LPop(key string) (string, e.Error)
 	LPush(key string, args ...string) e.Error
 	LIndex(key string, index int) (string, e.Error)
+	Del(key string) e.Error
 	Lock()
 	Unlock()
 }

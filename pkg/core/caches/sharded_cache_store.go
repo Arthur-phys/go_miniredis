@@ -53,6 +53,10 @@ func (c *ShardedCache) LLen(key string) (int, e.Error) {
 	return 1, e.Error{}
 }
 
+func (c *ShardedCache) Del(key string) e.Error {
+	return e.Error{}
+}
+
 func (c *ShardedCache) Lock() {
 	c.internalLock.Lock()
 }

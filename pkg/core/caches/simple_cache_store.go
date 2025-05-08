@@ -9,22 +9,23 @@ import (
 )
 
 type SimpleCache struct {
-	internalLock     sync.Mutex
-	simpleDictionary map[string]string
-	arrayDictionary  map[string][]string
+	internalLock sync.Mutex
+	dict         map[string]interface{}
 }
 
 func NewSimpleCache() interfaces.CacheStore {
 	return &SimpleCache{
 		sync.Mutex{},
-		make(map[string]string),
-		make(map[string][]string),
+		make(map[string]interface{}),
 	}
 }
 
 func (c *SimpleCache) Get(key string) (string, e.Error) {
-	if v, ok := c.simpleDictionary[key]; ok {
-		return v, e.Error{}
+	if v, ok := c.dict[key]; ok {
+		if v, ok := v.(string); ok {
+			return v, e.Error{}
+		}
+		return "", e.WrongType
 	} else {
 		err := e.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
@@ -33,27 +34,33 @@ func (c *SimpleCache) Get(key string) (string, e.Error) {
 }
 
 func (c *SimpleCache) Set(key string, value string) e.Error {
-	c.simpleDictionary[key] = value
+	c.dict[key] = value
 	return e.Error{}
 }
 
 func (c *SimpleCache) RPush(key string, args ...string) e.Error {
-	if _, ok := c.arrayDictionary[key]; ok {
-		c.arrayDictionary[key] = append(c.arrayDictionary[key], args...)
+	if v, ok := c.dict[key]; ok {
+		if v, ok := v.([]string); ok {
+			c.dict[key] = append(v, args...)
+		}
+		return e.WrongType
 	} else {
-		c.arrayDictionary[key] = args
+		c.dict[key] = args
 	}
 	return e.Error{}
 }
 
 func (c *SimpleCache) RPop(key string) (string, e.Error) {
 	var x string
-	if v, ok := c.arrayDictionary[key]; ok {
-		x, c.arrayDictionary[key] = v[len(v)-1], v[:len(v)-1]
-		if len(v)-1 == 0 {
-			delete(c.arrayDictionary, key)
+	if v, ok := c.dict[key]; ok {
+		if v, ok := v.([]string); ok {
+			x, c.dict[key] = v[len(v)-1], v[:len(v)-1]
+			if len(v)-1 == 0 {
+				delete(c.dict, key)
+			}
+			return x, e.Error{}
 		}
-		return x, e.Error{}
+		return "", e.WrongType
 	} else {
 		err := e.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
@@ -68,22 +75,28 @@ func (c *SimpleCache) LPush(key string, args ...string) e.Error {
 		i++
 		j--
 	}
-	if _, ok := c.arrayDictionary[key]; ok {
-		c.arrayDictionary[key] = append(args, c.arrayDictionary[key]...)
+	if v, ok := c.dict[key]; ok {
+		if v, ok := v.([]string); ok {
+			c.dict[key] = append(args, v...)
+		}
+		return e.WrongType
 	} else {
-		c.arrayDictionary[key] = args
+		c.dict[key] = args
 	}
 	return e.Error{}
 }
 
 func (c *SimpleCache) LPop(key string) (string, e.Error) {
 	var x string
-	if v, ok := c.arrayDictionary[key]; ok {
-		x, c.arrayDictionary[key] = v[0], v[1:]
-		if len(v)-1 == 0 {
-			delete(c.arrayDictionary, key)
+	if v, ok := c.dict[key]; ok {
+		if v, ok := v.([]string); ok {
+			x, c.dict[key] = v[0], v[1:]
+			if len(v)-1 == 0 {
+				delete(c.dict, key)
+			}
+			return x, e.Error{}
 		}
-		return x, e.Error{}
+		return "", e.WrongType
 	} else {
 		err := e.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
@@ -92,12 +105,17 @@ func (c *SimpleCache) LPop(key string) (string, e.Error) {
 }
 
 func (c *SimpleCache) LIndex(key string, index int) (string, e.Error) {
-	if v, ok := c.arrayDictionary[key]; ok && len(v) > index && index >= 0 {
-		return v[index], e.Error{}
-	} else if len(v) < index || index < 0 {
-		err := e.IndexOutOfRange
-		err.ExtraContext = map[string]string{"index": fmt.Sprintf("%d", index)}
-		return "", err
+	if v, ok := c.dict[key]; ok {
+		if v, ok := v.([]string); ok {
+			if len(v) > index && index >= 0 {
+				return v[index], e.Error{}
+			} else {
+				err := e.IndexOutOfRange
+				err.ExtraContext = map[string]string{"index": fmt.Sprintf("%d", index)}
+				return "", err
+			}
+		}
+		return "", e.WrongType
 	} else {
 		err := e.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
@@ -105,8 +123,16 @@ func (c *SimpleCache) LIndex(key string, index int) (string, e.Error) {
 	}
 }
 
+func (c *SimpleCache) Del(key string) e.Error {
+	delete(c.dict, key)
+	return e.Error{}
+}
+
 func (c *SimpleCache) LLen(key string) (int, e.Error) {
-	return len(c.arrayDictionary[key]), e.Error{}
+	if v, ok := c.dict[key].([]string); ok {
+		return len(v), e.Error{}
+	}
+	return 0, e.WrongType
 }
 
 func (c *SimpleCache) Lock() {
