@@ -9,14 +9,14 @@ import (
 	"github.com/Arthur-phys/redigo/pkg/server"
 )
 
-func TestE2E_Connection_FullTest(t *testing.T) {
+func TestE2E_Server_Full(t *testing.T) {
 	s, err := server.New(
 		"127.0.0.1",
 		8000,
 		caches.NewSimpleCache,
 		server.NewWorkerInstantiator(),
 		10240,
-		2,
+		1,
 		15,
 	)
 	if err != nil {
@@ -29,7 +29,6 @@ func TestE2E_Connection_FullTest(t *testing.T) {
 	t.Run("Command=SET,Response=Null", e2e_Connection_That_Sends_A_SET_Should_Receive_Null_As_Response)
 	t.Run("Command=GET,Response=String", e2e_Connection_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present)
 	t.Run("Command=RPOP,Response=Null", e2e_Connection_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present)
-	t.Run("Command=LPOP,Response=Null", e2e_Connection_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present)
 	t.Run("Command=LPOP,Response=Null", e2e_Connection_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present)
 	t.Run("Command=RPUSH,Response=Null", e2e_Connection_That_Sends_An_RPUSH_Should_Receive_Null)
 	t.Run("Command=RPOP,Response=String", e2e_Connection_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present)
@@ -142,6 +141,10 @@ func e2e_Connection_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present
 	if n != 3 || string(response[:n]) != "_\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
 }
 
@@ -160,6 +163,10 @@ func e2e_Connection_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present
 	}
 	if n != 3 || string(response[:n]) != "_\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
 }
@@ -180,6 +187,10 @@ func e2e_Connection_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
 	if n != 3 || string(response[:n]) != "_\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	err = conn.Close()
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -229,6 +240,10 @@ func e2e_Connection_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t
 	if n != 12 || string(response[:n]) != "$6\r\nREDIGO\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 }
 
 func e2e_Connection_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
@@ -247,6 +262,10 @@ func e2e_Connection_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
 	if n != 3 || string(response[:n]) != "_\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	err = conn.Close()
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -269,6 +288,10 @@ func e2e_Connection_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_B
 	if n != 3 || string(response[:n]) != "_\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
 }
 
@@ -288,6 +311,10 @@ func e2e_Connection_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present
 	if n != 10 || string(response[:n]) != "$4\r\nNIJI\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
 }
 
@@ -305,6 +332,10 @@ func e2e_Connection_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Presen
 	}
 	if n != 4 || string(response[:n]) != ":4\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
 }
@@ -352,6 +383,10 @@ func e2e_Connection_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t
 	if n != 12 || string(response[:n]) != "$6\r\nREDIGO\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
 }
 
@@ -371,6 +406,10 @@ func e2e_Connection_That_Sends_A_Shorter_Message_Than_It_Should_Would_Receive_Er
 	if n != 20 || string(response[:n]) != "-Command malformed\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
 }
 
@@ -389,6 +428,10 @@ func e2e_Connection_That_Sends_A_Larger_Message_Than_It_Should_Would_Receive_Err
 	}
 	if n != 20 || string(response[:n]) != "-Command malformed\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
 }
@@ -410,6 +453,10 @@ func e2e_Connection_That_Sends_A_Partial_Message_Will_Receive_Response_Until_Mes
 	if n != 3 && string(response) != "_\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
 }
 
@@ -430,6 +477,10 @@ func e2e_Connection_That_Sends_Multiple_Messages_Will_Receive_Multiple_Responses
 	if n != 13 && string(response) != "_\r\n$4\r\nDOGS\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
 }
 
@@ -448,6 +499,10 @@ func e2e_Connection_That_Sends_Multiple_Messages_Will_Receive_Multiple_Responses
 	}
 	if n != 20 && string(response) != "_\r\n$7\r\nBIGOTES\r\n:2\r\n" {
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
 }

@@ -93,9 +93,14 @@ func (client *Client) RPop(key string) (string, e.Error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if err.Code == 5 && err.ExtraContext["received"] == "-" {
-		_, err = client.p.ParseError()
-		return "", err
+	if err.Code == 5 {
+		if err.ExtraContext["received"] == "_" {
+			_, err := client.p.ParseNull()
+			return "", err
+		} else if err.ExtraContext["received"] == "-" {
+			_, err = client.p.ParseError()
+			return "", err
+		}
 	}
 	return result, err
 }
@@ -129,9 +134,14 @@ func (client *Client) LPop(key string) (string, e.Error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if err.Code == 5 && err.ExtraContext["received"] == "-" {
-		_, err = client.p.ParseError()
-		return "", err
+	if err.Code == 5 {
+		if err.ExtraContext["received"] == "_" {
+			_, err := client.p.ParseNull()
+			return "", err
+		} else if err.ExtraContext["received"] == "-" {
+			_, err = client.p.ParseError()
+			return "", err
+		}
 	}
 	return result, err
 }
@@ -169,9 +179,14 @@ func (client *Client) LIndex(key string, index int) (string, e.Error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if err.Code == 5 && err.ExtraContext["received"] == "-" {
-		_, err = client.p.ParseError()
-		return "", err
+	if err.Code == 5 {
+		if err.ExtraContext["received"] == "_" {
+			_, err := client.p.ParseNull()
+			return "", err
+		} else if err.ExtraContext["received"] == "-" {
+			_, err = client.p.ParseError()
+			return "", err
+		}
 	}
 	return result, err
 }

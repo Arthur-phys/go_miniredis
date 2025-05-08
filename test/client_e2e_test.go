@@ -28,21 +28,16 @@ func TestE2E_Client_Full(t *testing.T) {
 	}()
 	t.Run("Command=GET,Response=Null", e2e_Client_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present)
 	t.Run("Command=SET,Response=Null", e2e_Client_That_Sends_A_SET_Should_Receive_Null_As_Response)
-
-}
-
-func e2e_Client_That_Sends_A_SET_Should_Receive_Null_As_Response(t *testing.T) {
-
-	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-	if err != nil {
-		t.Errorf("An unexpected error occurred! %e", err)
-	}
-	c := client.New(&conn)
-
-	newErr := c.Set("R", "REDIGO")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %e", err)
-	}
+	t.Run("Command=GET,Response=String", e2e_Client_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present)
+	t.Run("Command=RPOP,Response=Null", e2e_Client_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present)
+	t.Run("Command=LPOP,Response=Null", e2e_Client_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present)
+	t.Run("Command=RPUSH,Response=Null", e2e_Client_That_Sends_An_RPUSH_Should_Receive_Null)
+	t.Run("Command=RPOP,Response=String", e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present)
+	t.Run("Command=LPUSH,Response=Null", e2e_Client_That_Sends_An_LPUSH_Should_Receive_Null)
+	t.Run("Command=LINDEX,Response=Null", e2e_Client_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_But_Index_Is_Invalid)
+	t.Run("Command=LINDEX,Response=String", e2e_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And_Index_Is_Valid)
+	t.Run("Command=LLEN,Response=Int", e2e_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present)
+	t.Run("Command=LPOP,Response=String", e2e_Client_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present)
 
 }
 
@@ -59,416 +54,289 @@ func e2e_Client_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present(t *te
 		t.Errorf("Unexpected error occurred! %v, %v - %s", newErr, newErr.ExtraContext, str)
 	}
 
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("Unexpected error occurred! %e", err)
+	}
+
 }
 
-// func e2e_Client_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
+func e2e_Client_That_Sends_A_SET_Should_Receive_Null_As_Response(t *testing.T) {
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	c := client.New(&conn)
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	newErr := c.Set("R", "REDIGO")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %e", err)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$3\r\nGET\r\n$1\r\nR\r\n"))
-// 	n, err = conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 12 || string(response[:n]) != "$6\r\nREDIGO\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
-// 	}
-// 	err = conn.Close()
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("Unexpected error occurred! %e", err)
+	}
 
-// }
+}
 
-// func TestE2E_Client_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
+func e2e_Client_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nRPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	c := client.New(&conn)
+	response, newErr := c.Get("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "REDIGO" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// }
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// func TestE2E_Client_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
+}
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+func e2e_Client_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nLPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// }
+	c := client.New(&conn)
+	response, newErr := c.RPop("V")
 
-// func TestE2E_Client_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nR\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
+}
 
-// }
+func e2e_Client_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
 
-// func TestE2E_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	c := client.New(&conn)
+	response, newErr := c.LPop("V")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nRPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nR\r\n"))
-// 	n, err = conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 12 || string(response[:n]) != "$6\r\nANUBIS\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// }
+}
 
-// func TestE2E_Client_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
+func e2e_Client_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nR\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
+	c := client.New(&conn)
+	newErr := c.RPush("R", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
 
-// }
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// func TestE2E_Client_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
+}
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nLPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	c := client.New(&conn)
+	response, newErr := c.RPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "ANUBIS" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nR\r\n"))
-// 	n, err = conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 12 || string(response[:n]) != "$6\r\nANUBIS\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
-// 	}
+	response, newErr = c.RPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "BIGOTES" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// }
+	response, newErr = c.RPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "NIJI" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// func TestE2E_Client_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_But_Index_Is_Invalid(t *testing.T) {
+	response, newErr = c.RPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "REDIGO" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nLPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
+func e2e_Client_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$6\r\nLINDEX\r\n$1\r\nR\r\n$1\r\n5\r\n"))
-// 	n, err = conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// }
+	c := client.New(&conn)
+	newErr := c.LPush("R", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
 
-// func TestE2E_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And_Index_Is_Valid(t *testing.T) {
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+}
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+func e2e_Client_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_But_Index_Is_Invalid(t *testing.T) {
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nLPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$6\r\nLINDEX\r\n$1\r\nR\r\n$1\r\n3\r\n"))
-// 	n, err = conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 12 || string(response[:n]) != "$6\r\nREDIGO\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
-// 	}
+	c := client.New(&conn)
+	response, newErr := c.LIndex("R", 5)
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// }
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+}
 
-// func TestE2E_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present(t *testing.T) {
+func e2e_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And_Index_Is_Valid(t *testing.T) {
 
-// 	s, err := server.New(
-// 		"127.0.0.1",
-// 		8000,
-// 		caches.NewSimpleCache,
-// 		server.NewWorkerInstantiator(),
-// 		10240,
-// 		1,
-// 		15,
-// 	)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	response := make([]byte, 50)
-// 	go func() {
-// 		s.Run()
-// 	}()
-// 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nLPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
-// 	n, err := conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 3 || string(response[:n]) != "_\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-// 	}
+	c := client.New(&conn)
+	response, newErr := c.LIndex("R", 3)
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "REDIGO" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
 
-// 	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLLEN\r\n$1\r\nR\r\n"))
-// 	n, err = conn.Read(response)
-// 	if err != nil {
-// 		t.Errorf("An unexpected error occurred! %e", err)
-// 	}
-// 	if n != 4 || string(response[:n]) != ":4\r\n" {
-// 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
-// 	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+}
 
-// }
+func e2e_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present(t *testing.T) {
+
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	c := client.New(&conn)
+	response, newErr := c.LLen("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != 4 {
+		t.Errorf("Unexpected list size retrieved! %d", response)
+	}
+
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+}
+
+func e2e_Client_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t *testing.T) {
+
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	c := client.New(&conn)
+	response, newErr := c.LPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "ANUBIS" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
+	response, newErr = c.LPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "BIGOTES" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
+	response, newErr = c.LPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "NIJI" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
+	response, newErr = c.LPop("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "REDIGO" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+}
