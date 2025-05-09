@@ -422,6 +422,20 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			}
 			return []byte{}, newErr
 		}, e.Error{}
+	case "DEL":
+		if len(arr) != 2 {
+			newErr = e.InsufficientLength
+			newErr.ExtraContext["expected"] = "2"
+			newErr.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
+			return f, newErr
+		}
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+			err := d.Del(arr[1])
+			if err.Code != 0 {
+				return []byte{}, err
+			}
+			return rt.NullToBytes(), e.Error{}
+		}, e.Error{}
 	default:
 		newErr := e.FunctionNotFound
 		newErr.ExtraContext["function"] = arr[0]

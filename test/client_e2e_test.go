@@ -41,6 +41,7 @@ func TestE2E_Client_Full(t *testing.T) {
 	t.Run("Command=LINDEX,Response=String", e2e_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And_Index_Is_Valid)
 	t.Run("Command=LLEN,Response=Int", e2e_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present)
 	t.Run("Command=LPOP,Response=String", e2e_Client_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present)
+	t.Run("Command=DEL,Response=Null", e2e_Client_That_Sends_A_DEL_Message_Should_Receive_Null_If_Key_Is_Present)
 
 }
 
@@ -162,7 +163,7 @@ func e2e_Client_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
 	}
 
 	c := client.New(&conn)
-	newErr := c.RPush("R", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
+	newErr := c.RPush("V", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -181,7 +182,7 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *te
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 	c := client.New(&conn)
-	response, newErr := c.RPop("R")
+	response, newErr := c.RPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -189,7 +190,7 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *te
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
 
-	response, newErr = c.RPop("R")
+	response, newErr = c.RPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -197,7 +198,7 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *te
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
 
-	response, newErr = c.RPop("R")
+	response, newErr = c.RPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -205,7 +206,7 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *te
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
 
-	response, newErr = c.RPop("R")
+	response, newErr = c.RPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -227,7 +228,7 @@ func e2e_Client_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
 	}
 
 	c := client.New(&conn)
-	newErr := c.LPush("R", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
+	newErr := c.LPush("V", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -246,7 +247,7 @@ func e2e_Client_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_But_I
 	}
 
 	c := client.New(&conn)
-	response, newErr := c.LIndex("R", 5)
+	response, newErr := c.LIndex("V", 5)
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -268,7 +269,7 @@ func e2e_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And
 	}
 
 	c := client.New(&conn)
-	response, newErr := c.LIndex("R", 3)
+	response, newErr := c.LIndex("V", 3)
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -289,7 +290,7 @@ func e2e_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present(t 
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 	c := client.New(&conn)
-	response, newErr := c.LLen("R")
+	response, newErr := c.LLen("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
@@ -310,32 +311,55 @@ func e2e_Client_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t *te
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 	c := client.New(&conn)
-	response, newErr := c.LPop("R")
+	response, newErr := c.LPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
 	if response != "ANUBIS" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
-	response, newErr = c.LPop("R")
+	response, newErr = c.LPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
 	if response != "BIGOTES" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
-	response, newErr = c.LPop("R")
+	response, newErr = c.LPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
 	if response != "NIJI" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
-	response, newErr = c.LPop("R")
+	response, newErr = c.LPop("V")
 	if newErr.Code != 0 {
 		t.Errorf("Unexpected error occurred! %v", newErr)
 	}
 	if response != "REDIGO" {
+		t.Errorf("Unexpected string retrieved! %s", response)
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+}
+
+func e2e_Client_That_Sends_A_DEL_Message_Should_Receive_Null_If_Key_Is_Present(t *testing.T) {
+	conn, err := net.Dial("tcp", "127.0.0.1:8001")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	c := client.New(&conn)
+	newErr := c.Del("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	response, newErr := c.Get("R")
+	if newErr.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", newErr)
+	}
+	if response != "" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
 	err = conn.Close()

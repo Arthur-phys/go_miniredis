@@ -45,6 +45,7 @@ func TestE2E_Server_Full(t *testing.T) {
 	t.Run("Command=Incomplete,Response=UntilComplete", e2e_Connection_That_Sends_A_Partial_Message_Will_Receive_Response_Until_Message_Is_Complete)
 	t.Run("Command=Multiple,Response=Multiple", e2e_Connection_That_Sends_Multiple_Messages_Will_Receive_Multiple_Responses)
 	t.Run("Command=Multiple,Response=Multiple_2", e2e_Connection_That_Sends_Multiple_Messages_Will_Receive_Multiple_Responses_Different_Commands)
+	t.Run("Command=DEL,Response=Null", e2e_Connection_That_Sends_A_DEL_Message_Should_Receive_Null_If_Key_Is_Present)
 }
 
 func e2e_Connection_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present(t *testing.T) {
@@ -101,20 +102,8 @@ func e2e_Connection_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present(t *
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$3\r\nSET\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n"))
-	n, err := conn.Read(response)
-	if err != nil {
-		t.Errorf("An unexpected error occurred! %e", err)
-	}
-	if n != 3 || string(response[:n]) != "_\r\n" {
-		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
-	}
-	if err != nil {
-		t.Errorf("An unexpected error occurred! %e", err)
-	}
-
 	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$3\r\nGET\r\n$1\r\nR\r\n"))
-	n, err = conn.Read(response)
+	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
@@ -136,7 +125,7 @@ func e2e_Connection_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nV\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -159,7 +148,7 @@ func e2e_Connection_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nV\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -182,7 +171,7 @@ func e2e_Connection_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nRPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nRPUSH\r\n$1\r\nV\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -208,7 +197,7 @@ func e2e_Connection_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nV\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -217,7 +206,7 @@ func e2e_Connection_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nV\r\n"))
 	n, err = conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -226,7 +215,7 @@ func e2e_Connection_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nV\r\n"))
 	n, err = conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -235,7 +224,7 @@ func e2e_Connection_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, response)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nRPOP\r\n$1\r\nV\r\n"))
 	n, err = conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -257,7 +246,7 @@ func e2e_Connection_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nLPUSH\r\n$1\r\nR\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*6\r\n$5\r\nLPUSH\r\n$1\r\nV\r\n$6\r\nREDIGO\r\n$4\r\nNIJI\r\n$7\r\nBIGOTES\r\n$6\r\nANUBIS\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -283,7 +272,7 @@ func e2e_Connection_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_B
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$6\r\nLINDEX\r\n$1\r\nR\r\n$1\r\n5\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$6\r\nLINDEX\r\n$1\r\nV\r\n$1\r\n5\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -306,7 +295,7 @@ func e2e_Connection_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$6\r\nLINDEX\r\n$1\r\nR\r\n$1\r\n2\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*3\r\n$6\r\nLINDEX\r\n$1\r\nV\r\n$1\r\n2\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -328,7 +317,7 @@ func e2e_Connection_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Presen
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLLEN\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLLEN\r\n$1\r\nV\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -351,7 +340,7 @@ func e2e_Connection_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nV\r\n"))
 	n, err := conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -360,7 +349,7 @@ func e2e_Connection_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nV\r\n"))
 	n, err = conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -369,7 +358,7 @@ func e2e_Connection_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nV\r\n"))
 	n, err = conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -378,7 +367,7 @@ func e2e_Connection_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t
 		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
 	}
 
-	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nR\r\n"))
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$4\r\nLPOP\r\n$1\r\nV\r\n"))
 	n, err = conn.Read(response)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
@@ -508,4 +497,24 @@ func e2e_Connection_That_Sends_Multiple_Messages_Will_Receive_Multiple_Responses
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 
+}
+
+func e2e_Connection_That_Sends_A_DEL_Message_Should_Receive_Null_If_Key_Is_Present(t *testing.T) {
+	response := make([]byte, 50)
+	conn, err := net.Dial("tcp", "127.0.0.1:8000")
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	conn.Write(fmt.Appendf([]byte{}, "*2\r\n$3\r\nDEL\r\n$1\r\nR\r\n"))
+	n, err := conn.Read(response)
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
+	if n != 3 || string(response[:n]) != "_\r\n" {
+		t.Errorf("Unexpected response received! n = %d - response = %v", n, string(response))
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Errorf("An unexpected error occurred! %e", err)
+	}
 }

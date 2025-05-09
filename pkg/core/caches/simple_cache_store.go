@@ -42,6 +42,7 @@ func (c *SimpleCache) RPush(key string, args ...string) e.Error {
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.([]string); ok {
 			c.dict[key] = append(v, args...)
+			return e.Error{}
 		}
 		return e.WrongType
 	} else {
@@ -78,6 +79,7 @@ func (c *SimpleCache) LPush(key string, args ...string) e.Error {
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.([]string); ok {
 			c.dict[key] = append(args, v...)
+			return e.Error{}
 		}
 		return e.WrongType
 	} else {

@@ -181,7 +181,7 @@ func (client *Client) LIndex(key string, index int) (string, e.Error) {
 	result, _, err := client.p.ParseBlobString()
 	if err.Code == 5 {
 		if err.ExtraContext["received"] == "_" {
-			_, err := client.p.ParseNull()
+			_, err = client.p.ParseNull()
 			return "", err
 		} else if err.ExtraContext["received"] == "-" {
 			_, err = client.p.ParseError()
@@ -189,6 +189,24 @@ func (client *Client) LIndex(key string, index int) (string, e.Error) {
 		}
 	}
 	return result, err
+}
+
+func (client *Client) Del(key string) e.Error {
+	finalBytes := fmt.Appendf([]byte{}, fmt.Sprintf("*2\r\n$3\r\nDEL\r\n$%d\r\n%v\r\n", len(key), key))
+	err := client.sendBytes(finalBytes)
+	if err.Code != 0 {
+		return err
+	}
+	_, err = client.p.Read()
+	if err.Code != 0 {
+		return err
+	}
+	_, err = client.p.ParseNull()
+	if err.Code == 5 && err.ExtraContext["received"] == "-" {
+		_, err = client.p.ParseError()
+		return err
+	}
+	return err
 }
 
 func (client *Client) sendBytes(b []byte) e.Error {
