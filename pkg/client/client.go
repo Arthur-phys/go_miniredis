@@ -209,6 +209,24 @@ func (client *Client) Del(key string) e.Error {
 	return err
 }
 
+func (client *Client) Ping() (string, e.Error) {
+	finalBytes := fmt.Appendf([]byte{}, "*1\r\n$4\r\nPING\r\n")
+	err := client.sendBytes(finalBytes)
+	if err.Code != 0 {
+		return "", err
+	}
+	_, err = client.p.Read()
+	if err.Code != 0 {
+		return "", err
+	}
+	result, _, err := client.p.ParseBlobString()
+	if err.Code == 5 && err.ExtraContext["received"] == "-" {
+		_, err = client.p.ParseError()
+		return "", err
+	}
+	return result, e.Error{}
+}
+
 func (client *Client) sendBytes(b []byte) e.Error {
 	_, err := (*client.conn).Write(b)
 	if err != nil {

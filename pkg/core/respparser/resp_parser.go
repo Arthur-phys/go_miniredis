@@ -436,6 +436,10 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			}
 			return rt.NullToBytes(), e.Error{}
 		}, e.Error{}
+	case "PING":
+		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+			return rt.PongToBytes(), e.Error{}
+		}, e.Error{}
 	default:
 		newErr := e.FunctionNotFound
 		newErr.ExtraContext["function"] = arr[0]

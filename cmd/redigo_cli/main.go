@@ -41,6 +41,12 @@ func main() {
 	c := client.New(&conn)
 	reader := bufio.NewReader(os.Stdin)
 
+	fmt.Println("--------------")
+	fmt.Println("  REDIGO CLI  ")
+	fmt.Println("--------------")
+	fmt.Printf("License: MIT, Author: Arthur-phys, 2025\n\n")
+
+out:
 	for {
 		fmt.Print("> ")
 		line, readerr := reader.ReadString('\n')
@@ -48,78 +54,101 @@ func main() {
 			fmt.Printf("Error occurred while reading - %e\n", readerr)
 			continue
 		}
-		commands := strings.Split(line[:len(line)-1], " ")
+		commands := filter(strings.Split(line[:len(line)-1], " "), func(s string) bool { return s != "" })
 		var result any
 		var err e.Error
-		switch commands[0] {
+		switch strings.ToUpper(commands[0]) {
 		case "GET":
 			if len(commands) != 2 {
-				fmt.Printf("Incorrect length for command 'GET' - %d\n", len(commands))
+				fmt.Printf("* Incorrect length for command 'GET' - %d\n", len(commands))
 				continue
 			}
 			result, err = c.Get(commands[1])
 		case "SET":
 			if len(commands) != 3 {
-				fmt.Printf("Incorrect length for command 'SET' - %d\n", len(commands))
+				fmt.Printf("* Incorrect length for command 'SET' - %d\n", len(commands))
 				continue
 			}
 			err = c.Set(commands[1], commands[2])
 		case "RPUSH":
 			if len(commands) < 3 {
-				fmt.Printf("Insufficient length for command 'RPUSH' - %d\n", len(commands))
+				fmt.Printf("* Insufficient length for command 'RPUSH' - %d\n", len(commands))
 				continue
 			}
 			err = c.RPush(commands[1], commands[2:]...)
 		case "RPOP":
 			if len(commands) != 2 {
-				fmt.Printf("Incorrect length for command 'RPOP' - %d\n", len(commands))
+				fmt.Printf("* Incorrect length for command 'RPOP' - %d\n", len(commands))
 				continue
 			}
 			result, err = c.RPop(commands[1])
 		case "LPUSH":
 			if len(commands) < 3 {
-				fmt.Printf("Insufficient length for command 'LPUSH' - %d\n", len(commands))
+				fmt.Printf("* Insufficient length for command 'LPUSH' - %d\n", len(commands))
 				continue
 			}
-			err = c.RPush(commands[1], commands[2:]...)
+			err = c.LPush(commands[1], commands[2:]...)
 		case "LPOP":
 			if len(commands) != 2 {
-				fmt.Printf("Incorrect length for command 'LPOP' - %d\n", len(commands))
+				fmt.Printf("* Incorrect length for command 'LPOP' - %d\n", len(commands))
 				continue
 			}
 			result, err = c.LPop(commands[1])
 		case "LLEN":
 			if len(commands) != 2 {
-				fmt.Printf("Incorrect length for command 'LLEN' - %d\n", len(commands))
+				fmt.Printf("* Incorrect length for command 'LLEN' - %d\n", len(commands))
 				continue
 			}
 			result, err = c.LLen(commands[1])
 		case "LINDEX":
 			if len(commands) != 3 {
-				fmt.Printf("Incorrect length for command 'LLINDEX' - %d\n", len(commands))
+				fmt.Printf("* Incorrect length for command 'LLINDEX' - %d\n", len(commands))
 				continue
 			}
 			tmpInt, atoiErr := strconv.Atoi(commands[2])
 			if atoiErr != nil {
-				fmt.Printf("Could not convert index to integer - %e\n", atoiErr)
+				fmt.Printf("* Could not convert index to integer - %e\n", atoiErr)
 			}
 			result, err = c.LIndex(commands[1], tmpInt)
 		case "DEL":
 			if len(commands) != 2 {
-				fmt.Printf("Incorrect length for command 'DEL' - %d\n", len(commands))
+				fmt.Printf("* Incorrect length for command 'DEL' - %d\n", len(commands))
 				continue
 			}
 			err = c.Del(commands[1])
+		case "PING":
+			result, err = c.Ping()
+		case "EXIT":
+			break out
 		default:
-			fmt.Println("Command specified not found")
+			fmt.Println("* Command specified not found")
+			continue
 		}
 
-		if err.Code != 0 {
-			fmt.Printf("Error occurred while processing command - %v\n", err)
+		if err.Code == 15 || err.Code == 16 {
+			fmt.Println("! Connection closed")
+			break
+		} else if err.Code != 0 {
+			fmt.Printf("* Error occurred while processing command - %v\n", err)
 		} else if result != nil {
-			fmt.Printf("- %s\n", result)
+			fmt.Printf("- %v\n", result)
 		} else {
 			fmt.Println("- OK")
 		}
 	}
+
+	connErr = conn.Close()
+	if connErr != nil {
+		fmt.Printf("An error occurred while closing the connection - %e", connErr)
+	}
+}
+
+func filter[T any](arr []T, filter func(T) bool) []T {
+	res := []T{}
+	for _, t := range arr {
+		if filter(t) {
+			res = append(res, t)
+		}
+	}
+	return res
 }

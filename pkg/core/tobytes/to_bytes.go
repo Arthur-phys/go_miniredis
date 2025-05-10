@@ -21,3 +21,7 @@ func NullToBytes() []byte {
 func ErrToBytes(err e.Error) []byte {
 	return fmt.Appendf([]byte{'-'}, fmt.Sprintf("%v\r\n", err.ClientContext))
 }
+
+func PongToBytes() []byte {
+	return fmt.Appendf([]byte{'$'}, "4\r\nPONG\r\n")
+}
