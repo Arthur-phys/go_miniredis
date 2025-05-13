@@ -43,6 +43,8 @@ out:
 			break out
 		}
 	}
+
+	s.listener.Close()
 }
 func New(
 	ipAddress string,
