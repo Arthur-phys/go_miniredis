@@ -13,15 +13,18 @@ import (
 )
 
 func TestE2E_Server_Full(t *testing.T) {
-	s, err := server.New(
-		"127.0.0.1",
-		8000,
-		caches.NewSimpleCache,
-		server.NewWorkerInstantiator(),
-		10240,
-		1,
-		15,
-	)
+
+	serverConfig := server.Configuration{
+		IpAddress:              "127.0.0.1",
+		Port:                   8000,
+		WorkerSize:             1,
+		KeepAlive:              5,
+		MessageSizeLimit:       10240,
+		ShutdownTolerance:      1,
+		CacheStoreInstantiator: caches.NewSimpleCache,
+	}
+
+	s, err := server.New(&serverConfig)
 	if err != nil {
 		t.Errorf("An unexpected error occurred! %e", err)
 	}

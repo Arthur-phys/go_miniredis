@@ -25,7 +25,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -50,7 +51,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -75,7 +77,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -107,7 +110,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -141,7 +145,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -188,7 +193,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_S
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -213,7 +219,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 50, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 50, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -238,7 +245,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 36, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 36, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -271,7 +279,8 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 36, 1)
+	newWorker := workerInstantiator(cacheStore, channel, 36, 1, make(chan int64, 1),
+		&sync.WaitGroup{})
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
