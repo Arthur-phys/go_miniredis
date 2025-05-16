@@ -1,3 +1,4 @@
+// A simple implementation of a client REPL for REDIGO
 package main
 
 import (

@@ -1,3 +1,8 @@
+// client presents a simple implementation of how a client would be able to use
+// the server.
+//
+// Take into consideration that many things in server side have been reused for this client and
+// also that there is no RESP handshake, since it would not serve any purpose.
 package client
 
 import (
@@ -230,9 +235,9 @@ func (client *Client) Ping() (string, e.Error) {
 func (client *Client) sendBytes(b []byte) e.Error {
 	_, err := (*client.conn).Write(b)
 	if err != nil {
-		newErr := e.UnableToSendRequestToServer
-		newErr.From = err
-		return newErr
+		redigoError := e.UnableToSendRequestToServer
+		redigoError.From = err
+		return redigoError
 	}
 	return e.Error{}
 }

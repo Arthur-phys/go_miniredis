@@ -1,3 +1,4 @@
+// An example of creating & using a REDIGO client
 package main
 
 import (

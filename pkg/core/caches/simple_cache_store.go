@@ -1,3 +1,8 @@
+// caches has all the caches implemented on this library.
+// The biggest differences are in sharding or not for multiple access to a single dictonary.
+//
+// When using a cache, rather than instantiating it directly on a server, use a function like the NewSimpleCache.
+// This is because a cache is created for every connection opened.
 package caches
 
 import (
@@ -8,6 +13,8 @@ import (
 	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
+// SimpleCache may be of utility to you if you don't care about performace or have very few clients
+// otherwise, try to use another of the caches provided.
 type SimpleCache struct {
 	internalLock sync.Mutex
 	dict         map[string]interface{}

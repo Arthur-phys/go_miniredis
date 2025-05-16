@@ -25,8 +25,8 @@ func TestE2E_Client_Full(t *testing.T) {
 	}
 
 	s, err := server.New(&serverConfig)
-	if err != nil {
-		t.Errorf("An unexpected error occurred! %e", err)
+	if err.Code != 0 {
+		t.Errorf("An unexpected error occurred! %v", err)
 	}
 	go func() {
 		s.Run()
@@ -55,9 +55,9 @@ func e2e_Client_That_Sends_A_GET_Should_Receive_Null_If_Key_Is_Not_Present(t *te
 	}
 	c := client.New(&conn)
 
-	str, newErr := c.Get("R")
-	if newErr.Code != 0 || str != "" {
-		t.Errorf("Unexpected error occurred! %v, %v - %s", newErr, newErr.ExtraContext, str)
+	str, redigoError := c.Get("R")
+	if redigoError.Code != 0 || str != "" {
+		t.Errorf("Unexpected error occurred! %v, %v - %s", redigoError, redigoError.ExtraContext, str)
 	}
 
 	err = conn.Close()
@@ -75,8 +75,8 @@ func e2e_Client_That_Sends_A_SET_Should_Receive_Null_As_Response(t *testing.T) {
 	}
 	c := client.New(&conn)
 
-	newErr := c.Set("R", "REDIGO")
-	if newErr.Code != 0 {
+	redigoError := c.Set("R", "REDIGO")
+	if redigoError.Code != 0 {
 		t.Errorf("Unexpected error occurred! %e", err)
 	}
 
@@ -95,9 +95,9 @@ func e2e_Client_That_Sends_A_GET_Should_Receive_String_If_Key_Is_Present(t *test
 	}
 
 	c := client.New(&conn)
-	response, newErr := c.Get("R")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.Get("R")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "REDIGO" {
 		t.Errorf("Unexpected string retrieved! %s", response)
@@ -118,10 +118,10 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *
 	}
 
 	c := client.New(&conn)
-	response, newErr := c.RPop("V")
+	response, redigoError := c.RPop("V")
 
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "" {
 		t.Errorf("Unexpected string retrieved! %s", response)
@@ -142,9 +142,9 @@ func e2e_Client_That_Sends_An_LPOP_Should_Receive_Null_If_Key_Is_Not_Present(t *
 	}
 
 	c := client.New(&conn)
-	response, newErr := c.LPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.LPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "" {
 		t.Errorf("Unexpected string retrieved! %s", response)
@@ -165,9 +165,9 @@ func e2e_Client_That_Sends_An_RPUSH_Should_Receive_Null(t *testing.T) {
 	}
 
 	c := client.New(&conn)
-	newErr := c.RPush("V", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	redigoError := c.RPush("V", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 
 	err = conn.Close()
@@ -184,33 +184,33 @@ func e2e_Client_That_Sends_An_RPOP_Should_Receive_String_If_Key_Is_Present(t *te
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 	c := client.New(&conn)
-	response, newErr := c.RPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.RPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "ANUBIS" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
 
-	response, newErr = c.RPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError = c.RPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "BIGOTES" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
 
-	response, newErr = c.RPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError = c.RPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "NIJI" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
 
-	response, newErr = c.RPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError = c.RPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "REDIGO" {
 		t.Errorf("Unexpected string retrieved! %s", response)
@@ -230,9 +230,9 @@ func e2e_Client_That_Sends_An_LPUSH_Should_Receive_Null(t *testing.T) {
 	}
 
 	c := client.New(&conn)
-	newErr := c.LPush("V", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	redigoError := c.LPush("V", "REDIGO", "NIJI", "BIGOTES", "ANUBIS")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 
 	err = conn.Close()
@@ -249,9 +249,9 @@ func e2e_Client_That_Sends_An_LINDEX_Should_Receive_Null_If_Key_Is_Present_But_I
 	}
 
 	c := client.New(&conn)
-	response, newErr := c.LIndex("V", 5)
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.LIndex("V", 5)
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "" {
 		t.Errorf("Unexpected string retrieved! %s", response)
@@ -271,9 +271,9 @@ func e2e_Client_That_Sends_An_LINDEX_Should_Receive_String_If_Key_Is_Present_And
 	}
 
 	c := client.New(&conn)
-	response, newErr := c.LIndex("V", 3)
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.LIndex("V", 3)
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "REDIGO" {
 		t.Errorf("Unexpected string retrieved! %s", response)
@@ -292,9 +292,9 @@ func e2e_Client_That_Sends_An_LLEN_Should_Receive_List_Size_If_Key_Is_Present(t 
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 	c := client.New(&conn)
-	response, newErr := c.LLen("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.LLen("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != 4 {
 		t.Errorf("Unexpected list size retrieved! %d", response)
@@ -313,30 +313,30 @@ func e2e_Client_That_Sends_An_LPOP_Should_Receive_String_If_Key_Is_Present(t *te
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 	c := client.New(&conn)
-	response, newErr := c.LPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.LPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "ANUBIS" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
-	response, newErr = c.LPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError = c.LPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "BIGOTES" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
-	response, newErr = c.LPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError = c.LPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "NIJI" {
 		t.Errorf("Unexpected string retrieved! %s", response)
 	}
-	response, newErr = c.LPop("V")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError = c.LPop("V")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "REDIGO" {
 		t.Errorf("Unexpected string retrieved! %s", response)
@@ -353,13 +353,13 @@ func e2e_Client_That_Sends_A_DEL_Message_Should_Receive_Null_If_Key_Is_Present(t
 		t.Errorf("An unexpected error occurred! %e", err)
 	}
 	c := client.New(&conn)
-	newErr := c.Del("R")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	redigoError := c.Del("R")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
-	response, newErr := c.Get("R")
-	if newErr.Code != 0 {
-		t.Errorf("Unexpected error occurred! %v", newErr)
+	response, redigoError := c.Get("R")
+	if redigoError.Code != 0 {
+		t.Errorf("Unexpected error occurred! %v", redigoError)
 	}
 	if response != "" {
 		t.Errorf("Unexpected string retrieved! %s", response)

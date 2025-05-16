@@ -1,3 +1,9 @@
+// server package provides both the Server struct for initializing an instance of REDIGO
+// and a  Configuration struct to pass commands to the creation of a server.
+//
+// It also has the worker implementation, but this is not accessible to the library's user.
+//
+// Take into consideration that there is no RESP handshake.
 package server
 
 import (
@@ -17,6 +23,9 @@ import (
 	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
+// Server holds all information related to a server.
+// Both accepts connections and orchestrates workers by initializing them and
+// stopping them when signailed like so by the OS or user (Using Ctrl+C for example)
 type Server struct {
 	listener          net.Listener
 	cacheStore        interfaces.CacheStore
@@ -27,26 +36,28 @@ type Server struct {
 	shutdownTolerance int64
 }
 
-func (s *Server) Accept() {
+func (s *Server) accept() {
 	for {
-		conn, err := s.listener.Accept()
-		if errors.Is(err, net.ErrClosed) {
-			slog.Debug("Listener closed")
+		if conn, err := s.listener.Accept(); errors.Is(err, net.ErrClosed) {
+			// Whenever signailed to close the server, do so
+			slog.Info("Listener closed")
 			break
-		}
-		if err != nil {
+		} else if err != nil {
+			// Continue trying to accept connections even if one fails
 			slog.Error("An error occurred while accepting a new connection", "ERROR", err)
 			continue
+		} else {
+			s.connections <- conn
 		}
-		s.connections <- conn
 	}
 }
 
 func (s *Server) Run() {
+	// Ask to be notified when program is to be shutdown, disables go normal behaviour when Ctrl+C
 	signal.Notify(s.signals, syscall.SIGINT, syscall.SIGTERM)
 
 	// Delegate connection acceptance to another routine to listen for syscalls
-	go s.Accept()
+	go s.accept()
 
 	// Waiting for a signal to close from os
 	<-s.signals
@@ -61,22 +72,28 @@ func (s *Server) Run() {
 	close(s.connections)
 
 	// Now wait for every worker to finish
-	waitGroupChannel := make(chan struct{})
+	shutdownSignailer := make(chan struct{})
 	go func() {
-		defer close(waitGroupChannel)
+		defer close(shutdownSignailer)
 		s.shutdownWaiter.Wait()
 	}()
 	// In case a worker takes more than the tolerance, we end the program anyway
 	select {
-	case <-waitGroupChannel:
+	case <-shutdownSignailer:
 		slog.Info("All workers closed, terminating server")
-	case <-time.After(time.Duration(s.shutdownTolerance) + time.Second*2):
+		// Give an extra 5 secs for workers to do stuff before being left behind
+	case <-time.After(time.Duration(s.shutdownTolerance) + time.Second*5):
 		slog.Error("Unable to close all workers, terminating server anyway")
 	}
 }
-func New(serverConfig *Configuration) (Server, error) {
-	var server Server
 
+func New(serverConfig *Configuration) (Server, e.Error) {
+	var (
+		server         Server
+		listenerConfig net.ListenConfig
+	)
+
+	// Configure global logger to use ip, port and REDIGO as values in log output
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	logger = logger.With("[REDIGO]", "")
 	logger = logger.With("IP", serverConfig.IpAddress)
@@ -84,18 +101,17 @@ func New(serverConfig *Configuration) (Server, error) {
 	slog.SetDefault(logger)
 	slog.Info("Initializing Server")
 
-	listenerConfig := net.ListenConfig{}
-	listenerConfig.KeepAlive = time.Duration(serverConfig.KeepAlive) * time.Second
-	slog.Debug("KeepAliveConfig configuration set", slog.Int("KEAAPLIVE", int(serverConfig.KeepAlive)))
-
-	listener, err := listenerConfig.Listen(context.Background(), "tcp", fmt.Sprintf("%v:%v", serverConfig.IpAddress, serverConfig.Port))
+	// keepalive via TCP probes is disabled, every connection checks it on its own
+	listenerConfig.KeepAlive = -1
+	listener, err := listenerConfig.Listen(context.Background(), "tcp", net.JoinHostPort(serverConfig.IpAddress, fmt.Sprintf("%d", serverConfig.Port)))
 	if err != nil {
-		miniredisError := e.Error{}
-		miniredisError.From = err
-		return Server{}, miniredisError
+		redigoError := e.UnableToCreateServer
+		redigoError.From = err
+		return Server{}, redigoError
 	}
 	slog.Debug("Listener created")
 
+	// Filling server params
 	server.listener = listener
 	server.cacheStore = serverConfig.CacheStoreInstantiator()
 	server.connections = make(chan net.Conn)
@@ -104,29 +120,32 @@ func New(serverConfig *Configuration) (Server, error) {
 	server.shutdownTolerance = serverConfig.ShutdownTolerance
 	server.shutdownWaiter = &sync.WaitGroup{}
 
+	// Creating workers and running them
 	for i := range serverConfig.WorkerAmount {
-		workerChannel := make(chan int64, 1)
-		server.workerNotifiers[i] = workerChannel
+		notifications := make(chan int64, 1)
+		server.workerNotifiers[i] = notifications
 		worker := worker{
 			cacheStore:        server.cacheStore,
 			connections:       server.connections,
 			messageSizeLimit:  serverConfig.MessageSizeLimit,
 			timeout:           serverConfig.KeepAlive,
-			workerChannel:     workerChannel,
-			id:                uint64(i),
+			notifications:     notifications,
+			id:                i,
 			parseInstantiator: respparser.New,
-			workerWaitgroup:   server.shutdownWaiter,
+			shutdownWaiter:    server.shutdownWaiter,
 		}
-		worker.run()
+		go worker.run()
 	}
 
-	return server, nil
+	return server, e.Error{}
 }
 
+// Configuration is a helper struct to be more idiomatic when configuring a server.
+// You can see it in action in the cmd/redigo_server/ command.
 type Configuration struct {
 	IpAddress              string
 	Port                   uint16
-	WorkerAmount           uint
+	WorkerAmount           uint64
 	KeepAlive              int64
 	MessageSizeLimit       int
 	ShutdownTolerance      int64

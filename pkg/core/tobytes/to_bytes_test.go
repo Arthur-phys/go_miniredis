@@ -10,9 +10,9 @@ import (
 	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
-func TestBlobStringToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
+func TestBlobString_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	sampleStr := "a samplë"
-	byteString := BlobStringToBytes(sampleStr)
+	byteString := BlobString(sampleStr)
 	arr := []byte{'$', '9', '\r', '\n', 'a', ' ', 's', 'a', 'm', 'p', 'l', 195, 171, '\r', '\n'}
 	for i := range byteString {
 		if byteString[i] != arr[i] {
@@ -21,9 +21,9 @@ func TestBlobStringToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) 
 	}
 }
 
-func TestIntToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
+func TestInt_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	sampleInt := -43
-	byteString := IntToBytes(sampleInt)
+	byteString := Int(sampleInt)
 	arr := []byte{':', '-', '4', '3', '\r', '\n'}
 	for i := range byteString {
 		if byteString[i] != arr[i] {
@@ -32,8 +32,8 @@ func TestIntToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	}
 }
 
-func TestNullToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
-	byteString := NullToBytes()
+func TestNull_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
+	byteString := Null()
 	arr := []byte{'_', '\r', '\n'}
 	for i := range byteString {
 		if byteString[i] != arr[i] {
@@ -44,7 +44,7 @@ func TestNullToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 
 func TestErrToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 	sampleErr := e.Error{Content: "HI", Code: 22, From: nil}
-	byteString := ErrToBytes(sampleErr)
+	byteString := Err(sampleErr)
 	arr := []byte{'-'}
 	arr = fmt.Appendf(arr, "\r\n")
 	for i := range byteString {

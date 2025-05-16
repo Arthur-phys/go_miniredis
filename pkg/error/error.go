@@ -24,6 +24,7 @@ var (
 	UnableToSendRequestToServer    = Error{"Unable to send request to miniredis server", "", 16, nil, make(map[string]string)}
 	MaxSizePerCallExceeded         = Error{"Max size per call exceeded the marked threshold", "Call exceeded size allowed", 17, nil, make(map[string]string)}
 	WrongType                      = Error{"Operation against a key holding the wrong kind of value", "Operation against a key holding the wrong kind of value", 18, nil, make(map[string]string)}
+	UnableToCreateServer           = Error{"Unable to create the redigo server", "", 19, nil, make(map[string]string)}
 )
 
 type Error struct {

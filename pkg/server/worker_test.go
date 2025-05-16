@@ -30,10 +30,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 		connections:       channel,
 		messageSizeLimit:  10240,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -63,10 +63,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 		connections:       channel,
 		messageSizeLimit:  10240,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -96,10 +96,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 		connections:       channel,
 		messageSizeLimit:  10240,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -136,10 +136,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 		connections:       channel,
 		messageSizeLimit:  10240,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -178,10 +178,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 		connections:       channel,
 		messageSizeLimit:  10240,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -233,10 +233,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_S
 		connections:       channel,
 		messageSizeLimit:  10240,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -266,10 +266,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 		connections:       channel,
 		messageSizeLimit:  50,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -299,10 +299,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 		connections:       channel,
 		messageSizeLimit:  36,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -340,10 +340,10 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 		connections:       channel,
 		messageSizeLimit:  36,
 		timeout:           1,
-		workerChannel:     make(chan int64, 1),
+		notifications:     make(chan int64, 1),
 		id:                1,
 		parseInstantiator: respparser.New,
-		workerWaitgroup:   &sync.WaitGroup{},
+		shutdownWaiter:    &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
