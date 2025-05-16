@@ -19,7 +19,7 @@ type RESPParser struct {
 	rawBufferPosition      int
 	rawBufferEffectiveSize int
 	totalBytesRead         int
-	maxBytesPerCallAllowed int
+	messageSizeLimit       int
 	buffer                 *bufio.Reader
 	lastCommand            []byte
 	lastCommandUnprocessed bool
@@ -55,12 +55,12 @@ func (r *RESPParser) Read() (int, e.Error) {
 		r.buffer.Reset(bytes.NewReader(r.rawBuffer[:n]))
 	}
 
-	if r.totalBytesRead > r.maxBytesPerCallAllowed {
+	if r.totalBytesRead > r.messageSizeLimit {
 		r.lastCommand = []byte{}
 		r.lastCommandUnprocessed = false
 		r.totalBytesRead = 0
 		newErr := e.MaxSizePerCallExceeded
-		newErr.ExtraContext["maxSize"] = fmt.Sprintf("%d", r.maxBytesPerCallAllowed)
+		newErr.ExtraContext["maxSize"] = fmt.Sprintf("%d", r.messageSizeLimit)
 		newErr.ExtraContext["currentSize"] = fmt.Sprintf("%d", r.totalBytesRead)
 		return n, newErr
 	}

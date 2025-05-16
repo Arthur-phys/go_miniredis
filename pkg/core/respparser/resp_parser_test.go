@@ -18,7 +18,7 @@ func Test_ParseCommand_Should_Not_Return_Err_When_Passed_Valid_Command_As_Bytes(
 	parser.rawBuffer = incomingBytes
 	parser.buffer = bufio.NewReader(bytes.NewReader(incomingBytes))
 	parser.rawBufferEffectiveSize = len(incomingBytes)
-	parser.maxBytesPerCallAllowed = 10240
+	parser.messageSizeLimit = 10240
 	parser.totalBytesRead = 0
 	arr, err := parser.ParseCommand()
 	if err.Code != 3 {

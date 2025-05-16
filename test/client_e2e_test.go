@@ -17,7 +17,7 @@ func TestE2E_Client_Full(t *testing.T) {
 	serverConfig := server.Configuration{
 		IpAddress:              "127.0.0.1",
 		Port:                   8001,
-		WorkerSize:             1,
+		WorkerAmount:           1,
 		KeepAlive:              1,
 		MessageSizeLimit:       10240,
 		ShutdownTolerance:      1,

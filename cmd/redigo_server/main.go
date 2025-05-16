@@ -54,7 +54,7 @@ func main() {
 	serverConfig := server.Configuration{
 		IpAddress:              ipAddress,
 		Port:                   uint16(port),
-		WorkerSize:             workerSize,
+		WorkerAmount:           workerSize,
 		KeepAlive:              keepAlive,
 		MessageSizeLimit:       messageSizeLimit,
 		ShutdownTolerance:      shutdownTolerance,

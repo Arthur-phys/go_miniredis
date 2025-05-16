@@ -12,21 +12,21 @@ import (
 )
 
 type worker struct {
-	cacheStore             interfaces.CacheStore
-	parseInstantiator      func(c *net.Conn, maxBytesPerCallAllowed int) *respparser.RESPParser
-	connectionChannel      chan net.Conn
-	timeout                int64
-	id                     uint64
-	maxBytesPerCallAllowed int
-	workerChannel          chan int64
-	shutdown               bool
-	workerWaitgroup        *sync.WaitGroup
+	cacheStore        interfaces.CacheStore
+	parseInstantiator func(c *net.Conn, messageSizeLimit int) *respparser.RESPParser
+	connections       chan net.Conn
+	timeout           int64
+	id                uint64
+	messageSizeLimit  int
+	workerChannel     chan int64
+	shutdown          bool
+	workerWaitgroup   *sync.WaitGroup
 }
 
 func (w *worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
-	respparser := w.parseInstantiator(c, w.maxBytesPerCallAllowed)
+	respparser := w.parseInstantiator(c, w.messageSizeLimit)
 
 	for {
 		select {
@@ -106,7 +106,7 @@ func (w *worker) run() {
 	slog.Info("Starting worker", slog.Uint64("WORKERID", w.id))
 	go func() {
 		for {
-			if incomingConnection, ok := <-w.connectionChannel; ok {
+			if incomingConnection, ok := <-w.connections; ok {
 				w.handleConnection(&incomingConnection)
 			} else {
 				break

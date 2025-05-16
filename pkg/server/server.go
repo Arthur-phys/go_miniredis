@@ -20,10 +20,10 @@ import (
 type Server struct {
 	listener          net.Listener
 	cacheStore        interfaces.CacheStore
-	connectionChannel chan net.Conn
-	osSigs            chan os.Signal
-	workerChannels    []chan int64
-	workerWaitGroup   *sync.WaitGroup
+	connections       chan net.Conn
+	signals           chan os.Signal
+	workerNotifiers   []chan int64
+	shutdownWaiter    *sync.WaitGroup
 	shutdownTolerance int64
 }
 
@@ -38,33 +38,33 @@ func (s *Server) Accept() {
 			slog.Error("An error occurred while accepting a new connection", "ERROR", err)
 			continue
 		}
-		s.connectionChannel <- conn
+		s.connections <- conn
 	}
 }
 
 func (s *Server) Run() {
-	signal.Notify(s.osSigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(s.signals, syscall.SIGINT, syscall.SIGTERM)
 
 	// Delegate connection acceptance to another routine to listen for syscalls
 	go s.Accept()
 
 	// Waiting for a signal to close from os
-	<-s.osSigs
+	<-s.signals
 	slog.Info("Shutting down server, signailing workers", slog.Int64("SHUTDOWNTOLERANCE", s.shutdownTolerance))
 	// Signailing every worker
-	for i := range s.workerChannels {
-		s.workerChannels[i] <- s.shutdownTolerance
+	for i := range s.workerNotifiers {
+		s.workerNotifiers[i] <- s.shutdownTolerance
 	}
 	// Signailing connection goroutine to stop
 	s.listener.Close()
 	// Closing connection channel, which will completely terminate workers after the grace period to attend connections
-	close(s.connectionChannel)
+	close(s.connections)
 
 	// Now wait for every worker to finish
 	waitGroupChannel := make(chan struct{})
 	go func() {
 		defer close(waitGroupChannel)
-		s.workerWaitGroup.Wait()
+		s.shutdownWaiter.Wait()
 	}()
 	// In case a worker takes more than the tolerance, we end the program anyway
 	select {
@@ -98,24 +98,24 @@ func New(serverConfig *Configuration) (Server, error) {
 
 	server.listener = listener
 	server.cacheStore = serverConfig.CacheStoreInstantiator()
-	server.connectionChannel = make(chan net.Conn)
-	server.osSigs = make(chan os.Signal, 1)
-	server.workerChannels = make([]chan int64, serverConfig.WorkerSize)
+	server.connections = make(chan net.Conn)
+	server.signals = make(chan os.Signal, 1)
+	server.workerNotifiers = make([]chan int64, serverConfig.WorkerAmount)
 	server.shutdownTolerance = serverConfig.ShutdownTolerance
-	server.workerWaitGroup = &sync.WaitGroup{}
+	server.shutdownWaiter = &sync.WaitGroup{}
 
-	for i := range serverConfig.WorkerSize {
+	for i := range serverConfig.WorkerAmount {
 		workerChannel := make(chan int64, 1)
-		server.workerChannels[i] = workerChannel
+		server.workerNotifiers[i] = workerChannel
 		worker := worker{
-			cacheStore:             server.cacheStore,
-			connectionChannel:      server.connectionChannel,
-			maxBytesPerCallAllowed: serverConfig.MessageSizeLimit,
-			timeout:                serverConfig.KeepAlive,
-			workerChannel:          workerChannel,
-			id:                     uint64(i),
-			parseInstantiator:      respparser.New,
-			workerWaitgroup:        server.workerWaitGroup,
+			cacheStore:        server.cacheStore,
+			connections:       server.connections,
+			messageSizeLimit:  serverConfig.MessageSizeLimit,
+			timeout:           serverConfig.KeepAlive,
+			workerChannel:     workerChannel,
+			id:                uint64(i),
+			parseInstantiator: respparser.New,
+			workerWaitgroup:   server.shutdownWaiter,
 		}
 		worker.run()
 	}
@@ -126,7 +126,7 @@ func New(serverConfig *Configuration) (Server, error) {
 type Configuration struct {
 	IpAddress              string
 	Port                   uint16
-	WorkerSize             uint
+	WorkerAmount           uint
 	KeepAlive              int64
 	MessageSizeLimit       int
 	ShutdownTolerance      int64
