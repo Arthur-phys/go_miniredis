@@ -11,7 +11,7 @@ import (
 	rt "github.com/Arthur-phys/redigo/pkg/core/tobytes"
 )
 
-type Worker struct {
+type worker struct {
 	cacheStore             interfaces.CacheStore
 	parseInstantiator      func(c *net.Conn, maxBytesPerCallAllowed int) *respparser.RESPParser
 	connectionChannel      chan net.Conn
@@ -20,25 +20,10 @@ type Worker struct {
 	maxBytesPerCallAllowed int
 	workerChannel          chan int64
 	shutdown               bool
-	workerWaitGroup        *sync.WaitGroup
+	workerWaitgroup        *sync.WaitGroup
 }
 
-func NewWorkerInstantiator() func(
-	cacheStore interfaces.CacheStore,
-	connectionChannel chan net.Conn,
-	maxBytesPerCallAllowed int,
-	timeout int64,
-	workerChannel chan int64,
-	workerWaitGroup *sync.WaitGroup,
-) Worker {
-	var i uint64 = 0
-	return func(CacheStore interfaces.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout int64, workerChannel chan int64, workerWaitgroup *sync.WaitGroup) Worker {
-		i++
-		return Worker{CacheStore, respparser.New, connectionChannel, timeout, i, maxBytesPerCallAllowed, workerChannel, false, workerWaitgroup}
-	}
-}
-
-func (w *Worker) handleConnection(c *net.Conn) {
+func (w *worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 	respparser := w.parseInstantiator(c, w.maxBytesPerCallAllowed)
@@ -115,10 +100,10 @@ func (w *Worker) handleConnection(c *net.Conn) {
 	}
 }
 
-func (w *Worker) Run() {
-	w.workerWaitGroup.Add(1)
-	defer w.workerWaitGroup.Done()
-	slog.Info("Starting Worker", slog.Uint64("WORKERID", w.id))
+func (w *worker) run() {
+	w.workerWaitgroup.Add(1)
+	defer w.workerWaitgroup.Done()
+	slog.Info("Starting worker", slog.Uint64("WORKERID", w.id))
 	go func() {
 		for {
 			if incomingConnection, ok := <-w.connectionChannel; ok {

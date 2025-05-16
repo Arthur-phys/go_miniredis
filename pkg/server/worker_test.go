@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Arthur-phys/redigo/pkg/core/caches"
+	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 )
 
 func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When_Sent_A_Single_One(t *testing.T) {
@@ -22,11 +23,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 10240,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -48,11 +56,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 10240,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -74,11 +89,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 10240,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -107,11 +129,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 10240,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -142,11 +171,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 10240,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -190,11 +226,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_S
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 10240, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 10240,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -216,11 +259,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 50, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 50,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -242,11 +292,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 36, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 36,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()
@@ -276,11 +333,18 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	workerInstantiator := NewWorkerInstantiator()
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
-	newWorker := workerInstantiator(cacheStore, channel, 36, 1, make(chan int64, 1),
-		&sync.WaitGroup{})
+	newWorker := worker{
+		cacheStore:             cacheStore,
+		connectionChannel:      channel,
+		maxBytesPerCallAllowed: 36,
+		timeout:                1,
+		workerChannel:          make(chan int64, 1),
+		id:                     1,
+		parseInstantiator:      respparser.New,
+		workerWaitgroup:        &sync.WaitGroup{},
+	}
 
 	var genericConn net.Conn
 	newConnection := newMockConnection()

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
+	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
@@ -103,12 +104,20 @@ func New(serverConfig *Configuration) (Server, error) {
 	server.shutdownTolerance = serverConfig.ShutdownTolerance
 	server.workerWaitGroup = &sync.WaitGroup{}
 
-	workerInstantiator := NewWorkerInstantiator()
 	for i := range serverConfig.WorkerSize {
 		workerChannel := make(chan int64, 1)
 		server.workerChannels[i] = workerChannel
-		worker := workerInstantiator(server.cacheStore, server.connectionChannel, serverConfig.MessageSizeLimit, serverConfig.KeepAlive, workerChannel, server.workerWaitGroup)
-		worker.Run()
+		worker := worker{
+			cacheStore:             server.cacheStore,
+			connectionChannel:      server.connectionChannel,
+			maxBytesPerCallAllowed: serverConfig.MessageSizeLimit,
+			timeout:                serverConfig.KeepAlive,
+			workerChannel:          workerChannel,
+			id:                     uint64(i),
+			parseInstantiator:      respparser.New,
+			workerWaitgroup:        server.workerWaitGroup,
+		}
+		worker.run()
 	}
 
 	return server, nil
