@@ -51,16 +51,17 @@ func main() {
 		return
 	}
 
-	s, err := server.New(
-		ipAddress,
-		uint16(port),
-		cache,
-		server.NewWorkerInstantiator(),
-		messageSizeLimit,
-		workerSize,
-		keepAlive,
-		shutdownTolerance,
-	)
+	serverConfig := server.Configuration{
+		IpAddress:              ipAddress,
+		Port:                   uint16(port),
+		WorkerSize:             workerSize,
+		KeepAlive:              keepAlive,
+		MessageSizeLimit:       messageSizeLimit,
+		ShutdownTolerance:      shutdownTolerance,
+		CacheStoreInstantiator: cache,
+	}
+
+	s, err := server.New(&serverConfig)
 	if err != nil {
 		fmt.Printf("Fatal error occurred - %e \n", err)
 		return
