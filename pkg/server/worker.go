@@ -3,6 +3,7 @@ package server
 import (
 	"log/slog"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
@@ -19,6 +20,7 @@ type Worker struct {
 	maxBytesPerCallAllowed int
 	workerChannel          chan int64
 	shutdown               bool
+	workerWaitGroup        *sync.WaitGroup
 }
 
 func NewWorkerInstantiator() func(
@@ -27,11 +29,12 @@ func NewWorkerInstantiator() func(
 	maxBytesPerCallAllowed int,
 	timeout int64,
 	workerChannel chan int64,
+	workerWaitGroup *sync.WaitGroup,
 ) Worker {
 	var i uint64 = 0
-	return func(CacheStore interfaces.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout int64, workerChannel chan int64) Worker {
+	return func(CacheStore interfaces.CacheStore, connectionChannel chan net.Conn, maxBytesPerCallAllowed int, timeout int64, workerChannel chan int64, workerWaitgroup *sync.WaitGroup) Worker {
 		i++
-		return Worker{CacheStore, respparser.New, connectionChannel, timeout, i, maxBytesPerCallAllowed, workerChannel, false}
+		return Worker{CacheStore, respparser.New, connectionChannel, timeout, i, maxBytesPerCallAllowed, workerChannel, false, workerWaitgroup}
 	}
 }
 
@@ -113,13 +116,14 @@ func (w *Worker) handleConnection(c *net.Conn) {
 }
 
 func (w *Worker) Run() {
-	slog.Debug("Starting Worker", slog.Uint64("WORKERID", w.id))
+	w.workerWaitGroup.Add(1)
+	defer w.workerWaitGroup.Done()
+	slog.Info("Starting Worker", slog.Uint64("WORKERID", w.id))
 	go func() {
 		for {
 			if incomingConnection, ok := <-w.connectionChannel; ok {
 				w.handleConnection(&incomingConnection)
 			} else {
-				slog.Debug("Channel closed, terminating worker", slog.Uint64("WORKERID", w.id))
 				break
 			}
 		}

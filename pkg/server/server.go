@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
@@ -19,38 +22,62 @@ type Server struct {
 	connectionChannel chan net.Conn
 	osSigs            chan os.Signal
 	workerChannels    []chan int64
+	workerWaitGroup   *sync.WaitGroup
 	shutdownTolerance int64
 }
 
-func (s *Server) Run() {
-	signal.Notify(s.osSigs)
-out:
+func (s *Server) Accept() {
 	for {
 		conn, err := s.listener.Accept()
+		if errors.Is(err, net.ErrClosed) {
+			slog.Debug("Listener closed")
+			break
+		}
 		if err != nil {
 			slog.Error("An error occurred while accepting a new connection", "ERROR", err)
-		}
-		select {
-		case s.connectionChannel <- conn:
 			continue
-		case sig := <-s.osSigs:
-			fmt.Println("Received", sig)
-			slog.Info("Shutting down server, signailing workers", slog.Int64("SHUTDOWNTOLERANCE", s.shutdownTolerance))
-			for i := range s.workerChannels {
-				s.workerChannels[i] <- s.shutdownTolerance
-			}
-			close(s.connectionChannel)
-			break out
 		}
+		s.connectionChannel <- conn
 	}
+}
 
+func (s *Server) Run() {
+	signal.Notify(s.osSigs, syscall.SIGINT, syscall.SIGTERM)
+
+	// Delegate connection acceptance to another routine to listen for syscalls
+	go s.Accept()
+
+	// Waiting for a signal to close from os
+	<-s.osSigs
+	slog.Info("Shutting down server, signailing workers", slog.Int64("SHUTDOWNTOLERANCE", s.shutdownTolerance))
+	// Signailing every worker
+	for i := range s.workerChannels {
+		s.workerChannels[i] <- s.shutdownTolerance
+	}
+	// Signailing connection goroutine to stop
 	s.listener.Close()
+	// Closing connection channel, which will completely terminate workers after the grace period to attend connections
+	close(s.connectionChannel)
+
+	// Now wait for every worker to finish
+	waitGroupChannel := make(chan struct{})
+	go func() {
+		defer close(waitGroupChannel)
+		s.workerWaitGroup.Wait()
+	}()
+	// In case a worker takes more than the tolerance, we end the program anyway
+	select {
+	case <-waitGroupChannel:
+		slog.Info("All workers closed, terminating server")
+	case <-time.After(time.Duration(s.shutdownTolerance) + time.Second*2):
+		slog.Error("Unable to close all workers, terminating server anyway")
+	}
 }
 func New(
 	ipAddress string,
 	port uint16,
 	cacheStoreInstantiator func() interfaces.CacheStore,
-	workerInstantiator func(c interfaces.CacheStore, jobs chan net.Conn, maxBytesPerCallAllowed int, timeout int64, workerChannel chan int64) Worker,
+	workerInstantiator func(c interfaces.CacheStore, jobs chan net.Conn, maxBytesPerCallAllowed int, timeout int64, workerChannel chan int64, workerWaitgroup *sync.WaitGroup) Worker,
 	maxBytesPerCallAllowed int,
 	workerNumber uint,
 	keepAlive int64,
@@ -83,11 +110,12 @@ func New(
 	server.osSigs = make(chan os.Signal, 1)
 	server.workerChannels = make([]chan int64, workerNumber)
 	server.shutdownTolerance = shutdownTolerance
+	server.workerWaitGroup = &sync.WaitGroup{}
 
 	for i := range workerNumber {
 		workerChannel := make(chan int64, 1)
 		server.workerChannels[i] = workerChannel
-		worker := workerInstantiator(server.cacheStore, server.connectionChannel, maxBytesPerCallAllowed, keepAlive, workerChannel)
+		worker := workerInstantiator(server.cacheStore, server.connectionChannel, maxBytesPerCallAllowed, keepAlive, workerChannel, server.workerWaitGroup)
 		worker.Run()
 	}
 
