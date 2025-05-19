@@ -40,6 +40,17 @@ func New(conn *net.Conn, maxBytesAllowed int) *RESPParser {
 	return &RESPParser{conn, []byte{}, 0, 0, 0, maxBytesAllowed, &bufio.Reader{}, []byte{}, false}
 }
 
+func (r *RESPParser) NewConnection(conn *net.Conn) {
+	r.conn = conn
+	r.rawBuffer = []byte{}
+	r.rawBufferPosition = 0
+	r.rawBufferEffectiveSize = 0
+	r.totalBytesRead = 0
+	r.buffer = &bufio.Reader{}
+	r.lastCommand = []byte{}
+	r.lastCommandUnprocessed = false
+}
+
 // Read reads from the connection and into an internal bufio.Reader taking into account possible
 // previous commands not parsed.
 func (r *RESPParser) Read() (int, e.Error) {
@@ -82,7 +93,6 @@ func (r *RESPParser) Read() (int, e.Error) {
 		redigoError.ExtraContext["currentSize"] = fmt.Sprintf("%d", r.totalBytesRead)
 		return n, redigoError
 	}
-
 	return n, e.Error{}
 }
 
@@ -163,9 +173,7 @@ func ParseArray[T any](r *RESPParser, transformer func(r *RESPParser) (T, int, e
 			return nil, totalBytesRead, redigoError
 		}
 	}
-
 	return arr, totalBytesRead, e.Error{}
-
 }
 
 // ParseBlobString uses RESP Protocol to convert bytes into a string.
@@ -210,7 +218,6 @@ func (r *RESPParser) ParseBlobString() (string, int, e.Error) {
 		redigoError.From = err
 		return "", totalBytesRead, redigoError
 	}
-
 	return string(blobString), totalBytesRead, e.Error{}
 }
 
@@ -264,7 +271,6 @@ func (r *RESPParser) ParseUInt() (int, int, e.Error) {
 		redigoError.From = tmpErr
 		return 0, totalBytesRead, redigoError
 	}
-
 	return num, totalBytesRead, e.Error{}
 }
 

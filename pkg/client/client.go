@@ -20,8 +20,9 @@ type Client struct {
 	p      *respparser.RESPParser
 }
 
-func New(conn *net.Conn) Client {
-	return Client{conn, bufio.NewReader(*conn), respparser.New(conn, 10240)}
+func New(conn *net.Conn) *Client {
+	parser := respparser.New(conn, 10240)
+	return &Client{conn, bufio.NewReader(*conn), parser}
 }
 
 func (client *Client) Get(key string) (string, e.Error) {

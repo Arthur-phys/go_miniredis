@@ -17,13 +17,13 @@ import (
 // otherwise, try to use another of the caches provided.
 type SimpleCache struct {
 	internalLock sync.Mutex
-	dict         map[string]interface{}
+	dict         map[string]any
 }
 
 func NewSimpleCache() interfaces.CacheStore {
 	return &SimpleCache{
 		sync.Mutex{},
-		make(map[string]interface{}),
+		make(map[string]any),
 	}
 }
 

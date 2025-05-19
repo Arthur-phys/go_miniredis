@@ -15,12 +15,12 @@ import (
 // by parsing their commands.
 type worker struct {
 	cacheStore        interfaces.CacheStore
-	parseInstantiator func(c *net.Conn, messageSizeLimit int) *respparser.RESPParser
+	parser            *respparser.RESPParser
 	connections       chan net.Conn
 	timeout           int64
 	id                uint64
-	messageSizeLimit  int
-	notifications     chan int64
+	notifications     chan struct{}
+	shutdownTolerance int64
 	shutdown          bool
 	shutdownWaiter    *sync.WaitGroup
 }
@@ -31,20 +31,21 @@ func (w *worker) handleConnection(c *net.Conn) {
 	defer (*c).Close()
 	// Setting max deadline for reading or writing
 	(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
-	respparser := w.parseInstantiator(c, w.messageSizeLimit)
+	// Restarting parser for new connection
+	w.parser.NewConnection(c)
 
 	// A worker sticks with a connection until it closes, therefore just one worker attends a given connection
 	for {
 		select {
 		// When signailed to stop, give the connection a last chance to be read and receive an answer
-		case fullTimeout := <-w.notifications:
-			(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(fullTimeout)))
+		case <-w.notifications:
+			(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.shutdownTolerance)))
 			slog.Debug("Starting shutdown for worker, finishing any active connections", slog.Uint64("WORKERID", w.id))
 			w.shutdown = true
 
 		default:
 			finalResponse := []byte{}
-			_, err := respparser.Read()
+			_, err := w.parser.Read()
 			if err.Code == 15 {
 				// Stopped any Conn error here, incluiding EOF, Broken Pipe, etc.
 				slog.Debug("The connection was closed", "REASON", err.From,
@@ -63,7 +64,7 @@ func (w *worker) handleConnection(c *net.Conn) {
 			}
 
 			// Was able to read, now parse commands
-			commands, err := respparser.ParseCommand()
+			commands, err := w.parser.ParseCommand()
 			// If the buffer was exhausted, do not return an error, which is true for cases 0,3,4 & 8
 			if err.Code != 0 && err.Code != 3 && err.Code != 4 && err.Code != 8 {
 				// Command malformed, return immediately
@@ -119,7 +120,7 @@ func (w *worker) handleConnection(c *net.Conn) {
 
 // run is the main process of a worker
 func (w *worker) run() {
-	// Allow the server to wait on this worker for some time
+	// Allow the server to wait on this worker for some time when shutting down
 	w.shutdownWaiter.Add(1)
 	defer w.shutdownWaiter.Done()
 

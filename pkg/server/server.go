@@ -31,14 +31,15 @@ type Server struct {
 	cacheStore        interfaces.CacheStore
 	connections       chan net.Conn
 	signals           chan os.Signal
-	workerNotifiers   []chan int64
+	workerNotifiers   []chan struct{}
 	shutdownWaiter    *sync.WaitGroup
 	shutdownTolerance int64
 }
 
 func (s *Server) accept() {
 	for {
-		if conn, err := s.listener.Accept(); errors.Is(err, net.ErrClosed) {
+		conn, err := s.listener.Accept()
+		if errors.Is(err, net.ErrClosed) {
 			// Whenever signailed to close the server, do so
 			slog.Info("Listener closed")
 			break
@@ -46,9 +47,8 @@ func (s *Server) accept() {
 			// Continue trying to accept connections even if one fails
 			slog.Error("An error occurred while accepting a new connection", "ERROR", err)
 			continue
-		} else {
-			s.connections <- conn
 		}
+		s.connections <- conn
 	}
 }
 
@@ -64,7 +64,7 @@ func (s *Server) Run() {
 	slog.Info("Shutting down server, signailing workers", slog.Int64("SHUTDOWNTOLERANCE", s.shutdownTolerance))
 	// Signailing every worker
 	for i := range s.workerNotifiers {
-		s.workerNotifiers[i] <- s.shutdownTolerance
+		s.workerNotifiers[i] <- struct{}{}
 	}
 	// Signailing connection goroutine to stop
 	s.listener.Close()
@@ -87,11 +87,7 @@ func (s *Server) Run() {
 	}
 }
 
-func New(serverConfig *Configuration) (Server, e.Error) {
-	var (
-		server         Server
-		listenerConfig net.ListenConfig
-	)
+func New(serverConfig *Configuration) (*Server, e.Error) {
 
 	// Configure global logger to use ip, port and REDIGO as values in log output
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -102,42 +98,49 @@ func New(serverConfig *Configuration) (Server, e.Error) {
 	slog.Info("Initializing Server")
 
 	// keepalive via TCP probes is disabled, every connection checks it on its own
-	listenerConfig.KeepAlive = -1
+	listenerConfig := net.ListenConfig{KeepAlive: -1}
 	listener, err := listenerConfig.Listen(context.Background(), "tcp", net.JoinHostPort(serverConfig.IpAddress, fmt.Sprintf("%d", serverConfig.Port)))
 	if err != nil {
 		redigoError := e.UnableToCreateServer
 		redigoError.From = err
-		return Server{}, redigoError
+		return &Server{}, redigoError
 	}
 	slog.Debug("Listener created")
 
-	// Filling server params
-	server.listener = listener
-	server.cacheStore = serverConfig.CacheStoreInstantiator()
-	server.connections = make(chan net.Conn)
-	server.signals = make(chan os.Signal, 1)
-	server.workerNotifiers = make([]chan int64, serverConfig.WorkerAmount)
-	server.shutdownTolerance = serverConfig.ShutdownTolerance
-	server.shutdownWaiter = &sync.WaitGroup{}
+	connections := make(chan net.Conn)
+	signals := make(chan os.Signal, 1)
+	workerNotifiers := make([]chan struct{}, serverConfig.WorkerAmount)
+	shutdownWaiter := &sync.WaitGroup{}
+	cacheStore := serverConfig.CacheStoreInstantiator()
 
 	// Creating workers and running them
 	for i := range serverConfig.WorkerAmount {
-		notifications := make(chan int64, 1)
-		server.workerNotifiers[i] = notifications
+		notifications := make(chan struct{}, 1)
+		workerNotifiers[i] = notifications
 		worker := worker{
-			cacheStore:        server.cacheStore,
-			connections:       server.connections,
-			messageSizeLimit:  serverConfig.MessageSizeLimit,
+			cacheStore:        cacheStore,
+			connections:       connections,
 			timeout:           serverConfig.KeepAlive,
 			notifications:     notifications,
 			id:                i,
-			parseInstantiator: respparser.New,
-			shutdownWaiter:    server.shutdownWaiter,
+			shutdownTolerance: serverConfig.ShutdownTolerance,
+			parser:            respparser.New(nil, serverConfig.MessageSizeLimit),
+			shutdownWaiter:    shutdownWaiter,
 		}
 		go worker.run()
 	}
 
-	return server, e.Error{}
+	// Creating server
+	server := Server{
+		listener:          listener,
+		cacheStore:        cacheStore,
+		connections:       connections,
+		signals:           signals,
+		workerNotifiers:   workerNotifiers,
+		shutdownTolerance: serverConfig.ShutdownTolerance,
+		shutdownWaiter:    shutdownWaiter,
+	}
+	return &server, e.Error{}
 }
 
 // Configuration is a helper struct to be more idiomatic when configuring a server.
