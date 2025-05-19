@@ -26,14 +26,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  10240,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 10240),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -59,14 +58,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  10240,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 10240),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -92,14 +90,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  10240,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 10240),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -132,14 +129,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  10240,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 10240),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -174,14 +170,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  10240,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 10240),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -229,14 +224,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_S
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  10240,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 10240),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -262,14 +256,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  50,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 50),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -295,14 +288,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  36,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 36),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
@@ -336,14 +328,13 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	cacheStore := caches.NewSimpleCache()
 	channel := make(chan net.Conn)
 	newWorker := worker{
-		cacheStore:        cacheStore,
-		connections:       channel,
-		messageSizeLimit:  36,
-		timeout:           1,
-		notifications:     make(chan int64, 1),
-		id:                1,
-		parseInstantiator: respparser.New,
-		shutdownWaiter:    &sync.WaitGroup{},
+		cacheStore:     cacheStore,
+		connections:    channel,
+		timeout:        1,
+		notifications:  make(chan struct{}, 1),
+		id:             1,
+		parser:         respparser.New(nil, 36),
+		shutdownWaiter: &sync.WaitGroup{},
 	}
 
 	var genericConn net.Conn
