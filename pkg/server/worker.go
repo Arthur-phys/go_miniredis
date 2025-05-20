@@ -9,6 +9,7 @@ import (
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
 	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 	"github.com/Arthur-phys/redigo/pkg/core/tobytes"
+	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 // worker accepts new tcp connections and responds to clients
@@ -46,13 +47,13 @@ func (w *worker) handleConnection(c *net.Conn) {
 		default:
 			finalResponse := []byte{}
 			_, err := w.parser.Read()
-			if err.Code == 15 {
+			if e.ConnectionRelated(err) {
 				// Stopped any Conn error here, incluiding EOF, Broken Pipe, etc.
-				slog.Debug("The connection was closed", "REASON", err.From,
+				slog.Debug("The connection was closed", "REASON", err,
 					slog.Uint64("WORKERID", w.id),
 					slog.String("CLIENT", (*c).RemoteAddr().String()))
 				return
-			} else if err.Code == 17 {
+			} else if e.ExceededMaxSize(err) {
 				// Too big of a command
 				if _, err := (*c).Write(tobytes.Err(err)); err != nil {
 					slog.Error("An error occurred while sending error response to client", "ERROR", err,
@@ -66,7 +67,7 @@ func (w *worker) handleConnection(c *net.Conn) {
 			// Was able to read, now parse commands
 			commands, err := w.parser.ParseCommand()
 			// If the buffer was exhausted, do not return an error, which is true for cases 0,3,4 & 8
-			if err.Code != 0 && err.Code != 3 && err.Code != 4 && err.Code != 8 {
+			if !e.BufferExhausted(err) {
 				// Command malformed, return immediately
 				slog.Error("An error occurred while parsing the command", "ERROR", err,
 					slog.Uint64("WORKERID", w.id),
@@ -87,7 +88,7 @@ func (w *worker) handleConnection(c *net.Conn) {
 				w.cacheStore.Lock()
 				res, err := command(w.cacheStore)
 				w.cacheStore.Unlock()
-				if err.Code != 0 {
+				if err != nil {
 					slog.Error("An error occurred while executing client's command", "ERROR", err,
 						slog.Uint64("WORKERID", w.id),
 						slog.String("CLIENT", (*c).RemoteAddr().String()),

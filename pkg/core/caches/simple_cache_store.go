@@ -27,10 +27,10 @@ func NewSimpleCache() interfaces.CacheStore {
 	}
 }
 
-func (c *SimpleCache) Get(key string) (string, e.Error) {
+func (c *SimpleCache) Get(key string) (string, error) {
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.(string); ok {
-			return v, e.Error{}
+			return v, nil
 		}
 		return "", e.WrongType
 	} else {
@@ -40,25 +40,25 @@ func (c *SimpleCache) Get(key string) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCache) Set(key string, value string) e.Error {
+func (c *SimpleCache) Set(key string, value string) error {
 	c.dict[key] = value
-	return e.Error{}
+	return nil
 }
 
-func (c *SimpleCache) RPush(key string, args ...string) e.Error {
+func (c *SimpleCache) RPush(key string, args ...string) error {
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.([]string); ok {
 			c.dict[key] = append(v, args...)
-			return e.Error{}
+			return nil
 		}
 		return e.WrongType
 	} else {
 		c.dict[key] = args
 	}
-	return e.Error{}
+	return nil
 }
 
-func (c *SimpleCache) RPop(key string) (string, e.Error) {
+func (c *SimpleCache) RPop(key string) (string, error) {
 	var x string
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.([]string); ok {
@@ -66,7 +66,7 @@ func (c *SimpleCache) RPop(key string) (string, e.Error) {
 			if len(v)-1 == 0 {
 				delete(c.dict, key)
 			}
-			return x, e.Error{}
+			return x, nil
 		}
 		return "", e.WrongType
 	} else {
@@ -76,7 +76,7 @@ func (c *SimpleCache) RPop(key string) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCache) LPush(key string, args ...string) e.Error {
+func (c *SimpleCache) LPush(key string, args ...string) error {
 	i, j := 0, len(args)-1
 	for i < j {
 		args[i], args[j] = args[j], args[i]
@@ -86,16 +86,16 @@ func (c *SimpleCache) LPush(key string, args ...string) e.Error {
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.([]string); ok {
 			c.dict[key] = append(args, v...)
-			return e.Error{}
+			return nil
 		}
 		return e.WrongType
 	} else {
 		c.dict[key] = args
 	}
-	return e.Error{}
+	return nil
 }
 
-func (c *SimpleCache) LPop(key string) (string, e.Error) {
+func (c *SimpleCache) LPop(key string) (string, error) {
 	var x string
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.([]string); ok {
@@ -103,7 +103,7 @@ func (c *SimpleCache) LPop(key string) (string, e.Error) {
 			if len(v)-1 == 0 {
 				delete(c.dict, key)
 			}
-			return x, e.Error{}
+			return x, nil
 		}
 		return "", e.WrongType
 	} else {
@@ -113,13 +113,13 @@ func (c *SimpleCache) LPop(key string) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCache) LIndex(key string, index int) (string, e.Error) {
+func (c *SimpleCache) LIndex(key string, index int) (string, error) {
 	if v, ok := c.dict[key]; ok {
 		if v, ok := v.([]string); ok {
 			if len(v) > index && index >= 0 {
-				return v[index], e.Error{}
+				return v[index], nil
 			} else {
-				err := e.IndexOutOfRange
+				err := e.IndexOutOfRangeErr
 				err.ExtraContext = map[string]string{"index": fmt.Sprintf("%d", index)}
 				return "", err
 			}
@@ -132,14 +132,14 @@ func (c *SimpleCache) LIndex(key string, index int) (string, e.Error) {
 	}
 }
 
-func (c *SimpleCache) Del(key string) e.Error {
+func (c *SimpleCache) Del(key string) error {
 	delete(c.dict, key)
-	return e.Error{}
+	return nil
 }
 
-func (c *SimpleCache) LLen(key string) (int, e.Error) {
+func (c *SimpleCache) LLen(key string) (int, error) {
 	if v, ok := c.dict[key].([]string); ok {
-		return len(v), e.Error{}
+		return len(v), nil
 	}
 	return 0, e.WrongType
 }

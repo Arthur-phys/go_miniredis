@@ -7,7 +7,7 @@ import (
 
 var (
 	KeyNotFoundInDictionary        = Error{"Key not found in dictionary", "", 1, nil, make(map[string]string)}
-	IndexOutOfRange                = Error{"Index set is out of range", "", 2, nil, make(map[string]string)}
+	IndexOutOfRangeErr             = Error{"Index set is out of range", "", 2, nil, make(map[string]string)}
 	UnableToReadFirstByte          = Error{"Unable to read first byte", "", 3, nil, make(map[string]string)}
 	UnableToFindPattern            = Error{"Unable to find byte pattern in byte stream", "", 4, nil, make(map[string]string)}
 	UnexpectedFirstByte            = Error{"First byte was different from expected", "Command malformed", 5, nil, make(map[string]string)}
@@ -36,14 +36,64 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("[MiniRedisError-%d] %v\n", e.Code, e.Content)
+	return fmt.Sprintf("{CODE: %d -- CONTENT: %v -- FROM: %e}", e.Code, e.Content, e.From)
 }
 
 func (e Error) LogValue() slog.Value {
 	return slog.GroupValue(
-		slog.String("MiniRedisError", e.Content),
-		slog.Any("From", e.From),
-		slog.Int("ErrorCode", int(e.Code)),
-		slog.Any("Extra Information", e.ExtraContext),
+		slog.String("ERROR", e.Content),
+		slog.Any("FROM", e.From),
+		slog.Int("CODE", int(e.Code)),
+		slog.Any("INFORMATION", e.ExtraContext),
 	)
+}
+
+func IndexOutOfRange(e error) bool {
+	err, ok := e.(Error)
+	return err.Code == 2 && ok
+}
+
+func KeyNotFound(e error) bool {
+	err, ok := e.(Error)
+	return err.Code == 1 && ok
+}
+
+func UnableToRead(e error) bool {
+	err, ok := e.(Error)
+	return (err.Code == 3 || err.Code == 8) && ok
+}
+
+func UnableToFindPatternF(e error) bool {
+	err, ok := e.(Error)
+	return err.Code == 4 && ok
+}
+
+func ConnectionRelated(e error) bool {
+	err, ok := e.(Error)
+	return (err.Code == 15 || err.Code == 16) && ok
+}
+
+func ExceededMaxSize(e error) bool {
+	err, ok := e.(Error)
+	return err.Code == 17 && ok
+}
+
+func BufferExhausted(e error) bool {
+	err, ok := e.(Error)
+	return err.Code == 0 || err.Code == 3 || err.Code == 4 || err.Code == 8 && ok
+}
+
+func BytesDiffer(e error) bool {
+	err, ok := e.(Error)
+	return err.Code == 5 && ok
+}
+
+func IsRESPNull(e error) bool {
+	err, ok := e.(Error)
+	return err.ExtraContext["received"] == "_" && ok
+}
+
+func IsRESPError(e error) bool {
+	err, ok := e.(Error)
+	return err.ExtraContext["received"] == "-" && ok
 }

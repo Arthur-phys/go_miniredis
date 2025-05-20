@@ -53,7 +53,7 @@ func (r *RESPParser) NewConnection(conn *net.Conn) {
 
 // Read reads from the connection and into an internal bufio.Reader taking into account possible
 // previous commands not parsed.
-func (r *RESPParser) Read() (int, e.Error) {
+func (r *RESPParser) Read() (int, error) {
 	// Read in chunks of 4 kilobytes
 	r.rawBuffer = make([]byte, 4096)
 	r.rawBufferPosition = 0
@@ -93,72 +93,72 @@ func (r *RESPParser) Read() (int, e.Error) {
 		redigoError.ExtraContext["currentSize"] = fmt.Sprintf("%d", r.totalBytesRead)
 		return n, redigoError
 	}
-	return n, e.Error{}
+	return n, nil
 }
 
 // ParseCommand will use the RESPParser to parse as many commands as possible from the given internal buffer.
 //
 // It returns all commands able to be parsed at once to the client, incluiding any errors.
-func (r *RESPParser) ParseCommand() ([]func(d interfaces.CacheStore) ([]byte, e.Error), e.Error) {
+func (r *RESPParser) ParseCommand() ([]func(d interfaces.CacheStore) ([]byte, error), error) {
 	var (
 		// To create the array of strings this function needs to call itself
-		internalParser func() e.Error
-		commands       []func(d interfaces.CacheStore) ([]byte, e.Error)
+		internalParser func() error
+		commands       []func(d interfaces.CacheStore) ([]byte, error)
 	)
 
-	internalParser = func() e.Error {
-		blobStrings, n, redigoError := ParseArray(r, func(r *RESPParser) (string, int, e.Error) {
+	internalParser = func() error {
+		blobStrings, n, err := ParseArray(r, func(r *RESPParser) (string, int, error) {
 			return r.ParseBlobString()
 		})
 		if n == 0 {
-			return redigoError
+			return err
 		}
 		// If no command was able to be formed, this means the only command available is incomplete,
 		// return and try putting more into the buffer
-		if redigoError.Code != 0 && blobStrings == nil {
+		if err != nil && blobStrings == nil {
 			r.lastCommand = r.rawBuffer[r.rawBufferPosition:r.rawBufferEffectiveSize]
 			r.lastCommandUnprocessed = true
-			return redigoError
+			return err
 		}
 		// Now for every blobString array representing a command, we select the function and
 		// Call the parser again
 		r.rawBufferPosition += n
-		f, redigoError := selectFunction(blobStrings)
-		if redigoError.Code != 0 {
-			return redigoError
+		f, err := selectFunction(blobStrings)
+		if err != nil {
+			return err
 		}
 		commands = append(commands, f)
 		// Now go for the next command in the same buffer
 		return internalParser()
 	}
 
-	redigoError := internalParser()
-	return commands, redigoError
+	err := internalParser()
+	return commands, err
 }
 
 // ParseArray is recursive and uses any of the other Parse functions to create an array of that type.
 //
 // See RESP protocol
 // https://github.com/redis/redis-specifications/blob/master/protocol/RESP3.md
-func ParseArray[T any](r *RESPParser, transformer func(r *RESPParser) (T, int, e.Error)) ([]T, int, e.Error) {
+func ParseArray[T any](r *RESPParser, transformer func(r *RESPParser) (T, int, error)) ([]T, int, error) {
 	// Every function returns the total amount read in case it is necessary for whom it calls it
 	var totalBytesRead int
 
-	redigoError := r.checkFirstByte('*')
-	if redigoError.Code != 0 {
-		return nil, totalBytesRead, redigoError
+	err := r.checkFirstByte('*')
+	if err != nil {
+		return nil, totalBytesRead, err
 	}
 	totalBytesRead += 1
 
 	// Determines the size of the array by converting the given string into a number
-	num, n, redigoError := r.readUntilSliceFound([]byte{'\r', '\n'})
+	num, n, err := r.readUntilSliceFound([]byte{'\r', '\n'})
 	totalBytesRead += n
-	if redigoError.Code != 0 {
-		return nil, totalBytesRead, redigoError
+	if err != nil {
+		return nil, totalBytesRead, err
 	}
 	i, err := strconv.Atoi(string(num))
 	if err != nil {
-		redigoError = e.UnableToDetermineBulkArraySize
+		redigoError := e.UnableToDetermineBulkArraySize
 		redigoError.From = err
 		return nil, totalBytesRead, redigoError
 	}
@@ -167,32 +167,32 @@ func ParseArray[T any](r *RESPParser, transformer func(r *RESPParser) (T, int, e
 	arr := make([]T, i)
 	for j := range arr {
 		var m int = 0
-		arr[j], m, redigoError = transformer(r)
+		arr[j], m, err = transformer(r)
 		totalBytesRead += m
-		if redigoError.Code != 0 {
-			return nil, totalBytesRead, redigoError
+		if err != nil {
+			return nil, totalBytesRead, err
 		}
 	}
-	return arr, totalBytesRead, e.Error{}
+	return arr, totalBytesRead, nil
 }
 
 // ParseBlobString uses RESP Protocol to convert bytes into a string.
 //
 // See RESP protocol
 // https://github.com/redis/redis-specifications/blob/master/protocol/RESP3.md
-func (r *RESPParser) ParseBlobString() (string, int, e.Error) {
+func (r *RESPParser) ParseBlobString() (string, int, error) {
 	totalBytesRead := 0
 
-	redigoError := r.checkFirstByte('$')
-	if redigoError.Code != 0 {
-		return "", totalBytesRead, redigoError
+	err := r.checkFirstByte('$')
+	if err != nil {
+		return "", totalBytesRead, err
 	}
 	totalBytesRead += 1
 
-	bytesArr, n, redigoError := r.readUntilSliceFound([]byte{'\r', '\n'})
+	bytesArr, n, err := r.readUntilSliceFound([]byte{'\r', '\n'})
 	totalBytesRead += n
-	if redigoError.Code != 0 {
-		return "", totalBytesRead, redigoError
+	if err != nil {
+		return "", totalBytesRead, err
 	}
 
 	long, err := strconv.Atoi(string(bytesArr))
@@ -218,76 +218,76 @@ func (r *RESPParser) ParseBlobString() (string, int, e.Error) {
 		redigoError.From = err
 		return "", totalBytesRead, redigoError
 	}
-	return string(blobString), totalBytesRead, e.Error{}
+	return string(blobString), totalBytesRead, nil
 }
 
 // ParseNull uses RESP Protocol to convert Null response into an empty Error
 //
 // See RESP protocol
 // https://github.com/redis/redis-specifications/blob/master/protocol/RESP3.md
-func (r *RESPParser) ParseNull() (int, e.Error) {
+func (r *RESPParser) ParseNull() (int, error) {
 	totalBytesRead := 0
 
-	redigoError := r.checkFirstByte('_')
-	if redigoError.Code != 0 {
-		return totalBytesRead, redigoError
+	err := r.checkFirstByte('_')
+	if err != nil {
+		return totalBytesRead, err
 	}
 	totalBytesRead += 1
 
-	_, n, redigoError := r.readUntilSliceFound([]byte{'\r', '\n'})
+	_, n, err := r.readUntilSliceFound([]byte{'\r', '\n'})
 	totalBytesRead += n
-	if redigoError.Code != 0 {
-		return totalBytesRead, redigoError
+	if err != nil {
+		return totalBytesRead, err
 	}
 	if n != 2 {
 		return totalBytesRead, e.NotNullFoundInPlaceOfNull
 	}
 
-	return totalBytesRead, e.Error{}
+	return totalBytesRead, nil
 }
 
 // ParseUInt uses RESP Protocol to convert bytes into an int.
 //
 // See RESP protocol
 // https://github.com/redis/redis-specifications/blob/master/protocol/RESP3.md
-func (r *RESPParser) ParseUInt() (int, int, e.Error) {
+func (r *RESPParser) ParseUInt() (int, int, error) {
 	totalBytesRead := 0
 
-	redigoError := r.checkFirstByte(':')
-	if redigoError.Code != 0 {
-		return 0, totalBytesRead, redigoError
+	err := r.checkFirstByte(':')
+	if err != nil {
+		return 0, totalBytesRead, err
 	}
 	totalBytesRead += 1
 
-	integerReceived, n, redigoError := r.readUntilSliceFound([]byte{'\r', '\n'})
+	integerReceived, n, err := r.readUntilSliceFound([]byte{'\r', '\n'})
 	totalBytesRead += n
-	if redigoError.Code != 0 {
-		return 0, totalBytesRead, redigoError
+	if err != nil {
+		return 0, totalBytesRead, err
 	}
 
-	num, tmpErr := strconv.Atoi(string(integerReceived))
-	if tmpErr != nil {
+	num, err := strconv.Atoi(string(integerReceived))
+	if err != nil {
 		redigoError := e.UnableToConvertLenToInt
-		redigoError.From = tmpErr
+		redigoError.From = err
 		return 0, totalBytesRead, redigoError
 	}
-	return num, totalBytesRead, e.Error{}
+	return num, totalBytesRead, nil
 }
 
 // ParseError uses RESP Protocol to convert an error into an Error
 // See RESP protocol
 // https://github.com/redis/redis-specifications/blob/master/protocol/RESP3.md
-func (r *RESPParser) ParseError() (int, e.Error) {
+func (r *RESPParser) ParseError() (int, error) {
 	totalBytesRead := 0
 
-	redigoError := r.checkFirstByte('-')
-	if redigoError.Code != 0 {
-		return totalBytesRead, redigoError
+	err := r.checkFirstByte('-')
+	if err != nil {
+		return totalBytesRead, err
 	}
 	totalBytesRead += 1
-	errorReceived, n, redigoError := r.readUntilSliceFound([]byte{'\r', '\n'})
-	if redigoError.Code != 0 {
-		return totalBytesRead, redigoError
+	errorReceived, n, err := r.readUntilSliceFound([]byte{'\r', '\n'})
+	if err != nil {
+		return totalBytesRead, err
 	}
 	totalBytesRead += n
 	finalErr := e.ErrorReceived
@@ -295,7 +295,7 @@ func (r *RESPParser) ParseError() (int, e.Error) {
 	return totalBytesRead, finalErr
 }
 
-func (r *RESPParser) checkFirstByte(b byte) e.Error {
+func (r *RESPParser) checkFirstByte(b byte) error {
 	firstByte, err := r.buffer.ReadByte()
 	if err != nil {
 		redigoError := e.UnableToReadFirstByte
@@ -310,15 +310,15 @@ func (r *RESPParser) checkFirstByte(b byte) e.Error {
 		redigoError.ExtraContext["received"] = string(firstByte)
 		return redigoError
 	}
-	return e.Error{}
+	return nil
 }
 
 // readUntilSliceFound is a helper function to recursively read a buffer until finding a chain of bytes.
 // All of them have to match (in order & presence) for the function to return a value satisfactory
-func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, e.Error) {
-	var sliceFoundRecursive func([]byte, []byte) ([]byte, e.Error)
+func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, error) {
+	var sliceFoundRecursive func([]byte, []byte) ([]byte, error)
 
-	sliceFoundRecursive = func(delim []byte, bytesRead []byte) ([]byte, e.Error) {
+	sliceFoundRecursive = func(delim []byte, bytesRead []byte) ([]byte, error) {
 		bytes, err := r.buffer.ReadBytes(delim[0])
 		if err != nil {
 			redigoError := e.UnableToFindPattern
@@ -340,11 +340,11 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, e.Error) {
 				return sliceFoundRecursive(delim, bytesRead)
 			}
 		}
-		return bytesRead, e.Error{}
+		return bytesRead, nil
 	}
 	bytes, err := sliceFoundRecursive(delim, []byte{})
 	totalBytesRead := len(bytes)
-	if err.Code == 0 {
+	if err == nil {
 		bytes = bytes[:len(bytes)-len(delim)]
 	}
 	return bytes, totalBytesRead, err
@@ -353,8 +353,8 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, e.Error) {
 // selectFunction will read an array of strings and return a command to be run on the cache.
 //
 // Here's where you would implement a new command.
-func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Error), e.Error) {
-	var f func(d interfaces.CacheStore) ([]byte, e.Error)
+func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error), error) {
+	var f func(d interfaces.CacheStore) ([]byte, error)
 	var redigoError e.Error
 	switch arr[0] {
 	case "GET":
@@ -364,15 +364,15 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
-			if val, err := d.Get(arr[1]); err.Code == 0 {
-				return tobytes.BlobString(val), e.Error{}
-			} else if err.Code == 1 {
-				return tobytes.Null(), e.Error{}
+		return func(d interfaces.CacheStore) ([]byte, error) {
+			if val, err := d.Get(arr[1]); err == nil {
+				return tobytes.BlobString(val), nil
+			} else if e.KeyNotFound(err) {
+				return tobytes.Null(), nil
 			} else {
 				return []byte{}, err
 			}
-		}, e.Error{}
+		}, nil
 	case "SET":
 		if len(arr) != 3 {
 			redigoError = e.InsufficientLength
@@ -380,13 +380,13 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			err := d.Set(arr[1], arr[2])
-			if err.Code != 0 {
+			if err != nil {
 				return []byte{}, err
 			}
-			return tobytes.Null(), e.Error{}
-		}, e.Error{}
+			return tobytes.Null(), nil
+		}, nil
 	case "RPUSH":
 		if len(arr) < 3 {
 			redigoError = e.InsufficientLength
@@ -394,13 +394,13 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			err := d.RPush(arr[1], arr[2:]...)
-			if err.Code != 0 {
+			if err != nil {
 				return []byte{}, err
 			}
-			return tobytes.Null(), e.Error{}
-		}, e.Error{}
+			return tobytes.Null(), nil
+		}, nil
 	case "RPOP":
 		if len(arr) != 2 {
 			redigoError = e.InsufficientLength
@@ -408,15 +408,15 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			val, err := d.RPop(arr[1])
-			if err.Code == 0 {
-				return tobytes.BlobString(val), e.Error{}
-			} else if err.Code == 1 {
-				return tobytes.Null(), e.Error{}
+			if err == nil {
+				return tobytes.BlobString(val), nil
+			} else if e.KeyNotFound(err) {
+				return tobytes.Null(), nil
 			}
 			return []byte{}, err
-		}, e.Error{}
+		}, nil
 	case "LPUSH":
 		if len(arr) < 3 {
 			redigoError = e.InsufficientLength
@@ -424,13 +424,13 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			err := d.LPush(arr[1], arr[2:]...)
-			if err.Code != 0 {
+			if err != nil {
 				return []byte{}, err
 			}
-			return tobytes.Null(), e.Error{}
-		}, e.Error{}
+			return tobytes.Null(), nil
+		}, nil
 	case "LPOP":
 		if len(arr) != 2 {
 			redigoError = e.InsufficientLength
@@ -438,15 +438,15 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			val, err := d.LPop(arr[1])
-			if err.Code == 0 {
-				return tobytes.BlobString(val), e.Error{}
-			} else if err.Code == 1 {
-				return tobytes.Null(), e.Error{}
+			if err == nil {
+				return tobytes.BlobString(val), nil
+			} else if e.KeyNotFound(err) {
+				return tobytes.Null(), nil
 			}
 			return []byte{}, err
-		}, e.Error{}
+		}, nil
 	case "LLEN":
 		if len(arr) != 2 {
 			redigoError = e.InsufficientLength
@@ -454,13 +454,13 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			val, err := d.LLen(arr[1])
-			if err.Code != 0 {
+			if err != nil {
 				return []byte{}, err
 			}
-			return tobytes.Int(val), e.Error{}
-		}, e.Error{}
+			return tobytes.Int(val), nil
+		}, nil
 	case "LINDEX":
 		if len(arr) != 3 {
 			redigoError = e.InsufficientLength
@@ -468,7 +468,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			index, err := strconv.Atoi(arr[2])
 			if err != nil {
 				redigoError := e.UnableToConvertIndexToInt
@@ -476,14 +476,14 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 				redigoError.ExtraContext["provided"] = arr[2]
 				return []byte{}, redigoError
 			}
-			val, redigoError := d.LIndex(arr[1], index)
-			if redigoError.Code == 0 {
-				return tobytes.BlobString(val), e.Error{}
-			} else if redigoError.Code == 1 || redigoError.Code == 2 {
-				return tobytes.Null(), e.Error{}
+			val, err := d.LIndex(arr[1], index)
+			if e.KeyNotFound(err) || e.IndexOutOfRange(err) {
+				return tobytes.Null(), nil
+			} else if err != nil {
+				return []byte{}, err
 			}
-			return []byte{}, redigoError
-		}, e.Error{}
+			return tobytes.BlobString(val), nil
+		}, nil
 	case "DEL":
 		if len(arr) != 2 {
 			redigoError = e.InsufficientLength
@@ -491,17 +491,17 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, e.Erro
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
+		return func(d interfaces.CacheStore) ([]byte, error) {
 			err := d.Del(arr[1])
-			if err.Code != 0 {
+			if err != nil {
 				return []byte{}, err
 			}
-			return tobytes.Null(), e.Error{}
-		}, e.Error{}
+			return tobytes.Null(), nil
+		}, nil
 	case "PING":
-		return func(d interfaces.CacheStore) ([]byte, e.Error) {
-			return tobytes.Pong(), e.Error{}
-		}, e.Error{}
+		return func(d interfaces.CacheStore) ([]byte, error) {
+			return tobytes.Pong(), nil
+		}, nil
 	default:
 		redigoError := e.FunctionNotFound
 		redigoError.ExtraContext["function"] = arr[0]

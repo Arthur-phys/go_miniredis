@@ -49,15 +49,14 @@ func main() {
 
 out:
 	for {
+		var result any
 		fmt.Print("> ")
-		line, readerr := reader.ReadString('\n')
-		if readerr != nil {
-			fmt.Printf("Error occurred while reading - %e\n", readerr)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Printf("Error occurred while reading - %e\n", err)
 			continue
 		}
 		commands := filter(strings.Split(line[:len(line)-1], " "), func(s string) bool { return s != "" })
-		var result any
-		var err e.Error
 		switch strings.ToUpper(commands[0]) {
 		case "GET":
 			if len(commands) != 2 {
@@ -126,10 +125,10 @@ out:
 			continue
 		}
 
-		if err.Code == 15 || err.Code == 16 {
-			fmt.Println("! Connection closed")
+		if e.ConnectionRelated(err) {
+			fmt.Println("! Connection closed by the server")
 			break
-		} else if err.Code != 0 {
+		} else if err != nil {
 			fmt.Printf("* Error occurred while processing command - %v\n", err)
 		} else if result != nil {
 			fmt.Printf("- %v\n", result)
@@ -140,7 +139,7 @@ out:
 
 	connErr = conn.Close()
 	if connErr != nil {
-		fmt.Printf("An error occurred while closing the connection - %e", connErr)
+		fmt.Printf("An error occurred while closing the connection - %e\n", connErr)
 	}
 }
 

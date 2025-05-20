@@ -22,8 +22,12 @@ func Null() []byte {
 	return []byte{'_', '\r', '\n'}
 }
 
-func Err(err e.Error) []byte {
-	return fmt.Appendf([]byte{'-'}, fmt.Sprintf("%v\r\n", err.ClientContext))
+func Err(err error) []byte {
+	redigoError, ok := err.(e.Error)
+	if !ok {
+		return fmt.Appendf([]byte{'-'}, "Internal Server Error\r\n")
+	}
+	return fmt.Appendf([]byte{'-'}, fmt.Sprintf("%v\r\n", redigoError.ClientContext))
 }
 
 func Pong() []byte {
