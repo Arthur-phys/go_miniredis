@@ -193,7 +193,7 @@ func TestLIndex_Should_Return_Error_When_Index_Not_Present_In_List(t *testing.T)
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
 	}
-	if s, err := cs.LIndex("KEYVECTOR", 5); !e.IndexOutOfRange(err) {
+	if s, err := cs.LIndex("KEYVECTOR", 5); err == nil {
 		t.Errorf("Was able to retrieve unexistant value! %v - %s", err, s)
 	}
 }

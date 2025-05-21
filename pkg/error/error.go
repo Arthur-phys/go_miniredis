@@ -2,12 +2,15 @@ package error
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 )
 
 var (
-	KeyNotFoundInDictionary        = Error{"Key not found in dictionary", "", 1, nil, make(map[string]string)}
-	IndexOutOfRangeErr             = Error{"Index set is out of range", "", 2, nil, make(map[string]string)}
+	KeyNotFoundInDictionary = Error{"Key not found in dictionary", "", 1, nil, make(map[string]string)}
+	IndexOutOfRangeErr      = Error{"Index set is out of range", "", 2, nil, make(map[string]string)}
+
+	// Not cheked errors
 	UnableToReadFirstByte          = Error{"Unable to read first byte", "", 3, nil, make(map[string]string)}
 	UnableToFindPattern            = Error{"Unable to find byte pattern in byte stream", "", 4, nil, make(map[string]string)}
 	UnexpectedFirstByte            = Error{"First byte was different from expected", "Command malformed", 5, nil, make(map[string]string)}
@@ -20,7 +23,6 @@ var (
 	NotNullFoundInPlaceOfNull      = Error{"Null-like stream processed with not null received (len of content is bigger than 2)", "", 12, nil, make(map[string]string)}
 	ErrorReceived                  = Error{"Error received as a response", "", 13, nil, make(map[string]string)}
 	UnableToConvertLenToInt        = Error{"Unable to convert the given response to an integer representing length of array", "", 14, nil, make(map[string]string)}
-	UnableToReadFromConnection     = Error{"Unable to read bytes from connection", "", 15, nil, make(map[string]string)}
 	UnableToSendRequestToServer    = Error{"Unable to send request to miniredis server", "", 16, nil, make(map[string]string)}
 	MaxSizePerCallExceeded         = Error{"Max size per call exceeded the marked threshold", "Call exceeded size allowed", 17, nil, make(map[string]string)}
 	WrongType                      = Error{"Operation against a key holding the wrong kind of value", "Operation against a key holding the wrong kind of value", 18, nil, make(map[string]string)}
@@ -48,6 +50,10 @@ func (e Error) LogValue() slog.Value {
 	)
 }
 
+func ConnectionRelated(err error) bool {
+	return err == io.EOF || err == io.ErrUnexpectedEOF
+}
+
 func IndexOutOfRange(e error) bool {
 	err, ok := e.(Error)
 	return err.Code == 2 && ok
@@ -58,21 +64,6 @@ func KeyNotFound(e error) bool {
 	return err.Code == 1 && ok
 }
 
-func UnableToRead(e error) bool {
-	err, ok := e.(Error)
-	return (err.Code == 3 || err.Code == 8) && ok
-}
-
-func UnableToFindPatternF(e error) bool {
-	err, ok := e.(Error)
-	return err.Code == 4 && ok
-}
-
-func ConnectionRelated(e error) bool {
-	err, ok := e.(Error)
-	return (err.Code == 15 || err.Code == 16) && ok
-}
-
 func ExceededMaxSize(e error) bool {
 	err, ok := e.(Error)
 	return err.Code == 17 && ok
@@ -81,19 +72,4 @@ func ExceededMaxSize(e error) bool {
 func BufferExhausted(e error) bool {
 	err, ok := e.(Error)
 	return err.Code == 0 || err.Code == 3 || err.Code == 4 || err.Code == 8 && ok
-}
-
-func BytesDiffer(e error) bool {
-	err, ok := e.(Error)
-	return err.Code == 5 && ok
-}
-
-func IsRESPNull(e error) bool {
-	err, ok := e.(Error)
-	return err.ExtraContext["received"] == "_" && ok
-}
-
-func IsRESPError(e error) bool {
-	err, ok := e.(Error)
-	return err.ExtraContext["received"] == "-" && ok
 }

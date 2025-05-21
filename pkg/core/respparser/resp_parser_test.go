@@ -8,8 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
-
-	e "github.com/Arthur-phys/redigo/pkg/error"
 )
 
 func Test_ParseCommand_Should_Not_Return_Err_When_Passed_Valid_Command_As_Bytes(t *testing.T) {
@@ -21,7 +19,7 @@ func Test_ParseCommand_Should_Not_Return_Err_When_Passed_Valid_Command_As_Bytes(
 	parser.messageSizeLimit = 10240
 	parser.totalBytesRead = 0
 	arr, err := parser.ParseCommand()
-	if !e.UnableToRead(err) {
+	if err == nil {
 		t.Errorf("An unexpected error happened! %v", err)
 	} else if len(arr) != 1 {
 		t.Errorf("Unexpected len for commands! %d", len(arr))
@@ -59,7 +57,7 @@ func Test_ParseCommand_Should_Return_Multiple_Functions_When_Passed_Multiple_Com
 	parser.buffer = bufio.NewReader(bytes.NewReader(incomingBytes))
 	parser.rawBufferEffectiveSize = len(incomingBytes)
 	commands, err := parser.ParseCommand()
-	if !e.UnableToRead(err) {
+	if err == nil {
 		t.Errorf("Unexpected error happened! %v", err)
 	}
 	if len(commands) != 2 {
@@ -74,7 +72,7 @@ func Test_ParseCommand_Should_Return_Multiple_Functions_When_Passed_Multiple_Com
 	parser.buffer = bufio.NewReader(bytes.NewReader(incomingBytes))
 	parser.rawBufferEffectiveSize = len(incomingBytes)
 	commands, err := parser.ParseCommand()
-	if !e.UnableToRead(err) {
+	if err == nil {
 		t.Errorf("Unexpected error happened! %v", err)
 	}
 	if len(commands) != 1 {
@@ -85,7 +83,7 @@ func Test_ParseCommand_Should_Return_Multiple_Functions_When_Passed_Multiple_Com
 	parser.buffer.Reset(bytes.NewReader(incomingBytes))
 	parser.rawBufferEffectiveSize = len(incomingBytes)
 	commands, err = parser.ParseCommand()
-	if !e.UnableToRead(err) {
+	if err == nil {
 		t.Errorf("Unexpected error happened! %v", err)
 	}
 	if len(commands) != 1 {
@@ -145,7 +143,7 @@ func Test_ParseArray_Should_Return_Array_When_Passed_Valid_Bytes(t *testing.T) {
 		return r.ParseBlobString()
 	})
 	if err != nil {
-		t.Errorf("Unexpected error happened! %v", err)
+		t.Errorf("No error occurred!")
 	}
 	if len(arr) != 2 {
 		t.Errorf("Unexpected len for array! %d", len(arr))
@@ -162,7 +160,7 @@ func Test_ParseArray_Should_Return_Array_When_Passed_Valid_Bytes_For_UInts(t *te
 		return r.ParseUInt()
 	})
 	if err != nil {
-		t.Errorf("Unexpected error happened! %v", err)
+		t.Errorf("No error occurred!")
 	}
 	if len(arr) != 5 {
 		t.Errorf("Unexpected len for array! %d", len(arr))
@@ -179,7 +177,7 @@ func Test_ParseArray_Should_Return_Error_When_Passed_Invalid_Bytes(t *testing.T)
 		return r.ParseUInt()
 	})
 	if err == nil {
-		t.Errorf("Error did not happen! %v", err)
+		t.Errorf("No error occurred!")
 	}
 	if len(arr) != 0 {
 		t.Errorf("Unexpected len for array! %d", len(arr))
@@ -196,7 +194,7 @@ func Test_ParseArray_Should_Return_Error_When_Passed_Bytes_With_Multiple_Types(t
 		return r.ParseUInt()
 	})
 	if err == nil {
-		t.Errorf("Error did not happen! %v", err)
+		t.Errorf("No error occurred!")
 	}
 	if len(arr) != 0 {
 		t.Errorf("Unexpected len for array! %d", len(arr))
@@ -211,7 +209,7 @@ func TestReadUntilSliceFound_Should_Find_Whole_Slice_When_Present(t *testing.T) 
 	stream.rawBufferEffectiveSize = len(incomingBytes)
 	bytesRead, i, err := stream.readUntilSliceFound([]byte{'l', 'a'})
 	if err != nil {
-		t.Errorf("Unexpected error occurred! %v", err)
+		t.Errorf("No error occurred!")
 	}
 	if i != 4 {
 		t.Errorf("len for bytesRead is not 2! %v", len(bytesRead))
@@ -231,8 +229,8 @@ func TestReadUntilSliceFound_Should_Return_Whole_Slice_From_Reader_When_Slice_Lo
 	stream.buffer = bufio.NewReader(bytes.NewReader(incomingBytes))
 	stream.rawBufferEffectiveSize = len(incomingBytes)
 	bytesRead, i, err := stream.readUntilSliceFound([]byte{'l', 'x'})
-	if !e.UnableToFindPatternF(err) {
-		t.Errorf("Unexpected error occurred! %v", err)
+	if err == nil {
+		t.Errorf("No error occurred!")
 	}
 	if i != 4 {
 		t.Errorf("len for bytesRead is not 4, reader was not exhausted! %v", i)

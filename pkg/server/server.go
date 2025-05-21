@@ -87,7 +87,7 @@ func (s *Server) Run() {
 	}
 }
 
-func New(serverConfig *Configuration) (*Server, e.Error) {
+func New(serverConfig *Configuration) (*Server, error) {
 
 	// Configure global logger to use ip, port and REDIGO as values in log output
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -140,7 +140,7 @@ func New(serverConfig *Configuration) (*Server, e.Error) {
 		shutdownTolerance: serverConfig.ShutdownTolerance,
 		shutdownWaiter:    shutdownWaiter,
 	}
-	return &server, e.Error{}
+	return &server, nil
 }
 
 // Configuration is a helper struct to be more idiomatic when configuring a server.

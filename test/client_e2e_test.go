@@ -25,7 +25,7 @@ func TestE2E_Client_Full(t *testing.T) {
 	}
 
 	s, err := server.New(&serverConfig)
-	if err.Code != 0 {
+	if err != nil {
 		t.Errorf("An unexpected error occurred! %v", err)
 	}
 	go func() {

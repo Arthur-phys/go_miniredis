@@ -36,11 +36,11 @@ func (client *Client) Get(key string) (string, error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if e.BytesDiffer(err) {
-		if e.IsRESPNull(err) {
+	if bytesDiffer(err) {
+		if isRESPNull(err) {
 			_, err := client.p.ParseNull()
 			return "", err
-		} else if e.IsRESPError(err) {
+		} else if isRESPError(err) {
 			_, err = client.p.ParseError()
 			return "", err
 		}
@@ -59,7 +59,7 @@ func (client *Client) Set(key string, value string) error {
 		return err
 	}
 	_, err = client.p.ParseNull()
-	if e.BytesDiffer(err) && e.IsRESPError(err) {
+	if bytesDiffer(err) && isRESPError(err) {
 		_, err = client.p.ParseError()
 		return err
 	}
@@ -81,7 +81,7 @@ func (client *Client) RPush(key string, args ...string) error {
 		return err
 	}
 	_, err = client.p.ParseNull()
-	if e.BytesDiffer(err) && e.IsRESPError(err) {
+	if bytesDiffer(err) && isRESPError(err) {
 		_, err = client.p.ParseError()
 		return err
 	}
@@ -99,11 +99,11 @@ func (client *Client) RPop(key string) (string, error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if e.BytesDiffer(err) {
-		if e.IsRESPNull(err) {
+	if bytesDiffer(err) {
+		if isRESPNull(err) {
 			_, err := client.p.ParseNull()
 			return "", err
-		} else if e.IsRESPError(err) {
+		} else if isRESPError(err) {
 			_, err = client.p.ParseError()
 			return "", err
 		}
@@ -122,7 +122,7 @@ func (client *Client) LLen(key string) (int, error) {
 		return 0, err
 	}
 	result, _, err := client.p.ParseUInt()
-	if e.BytesDiffer(err) && e.IsRESPError(err) {
+	if bytesDiffer(err) && isRESPError(err) {
 		_, err = client.p.ParseError()
 		return 0, err
 	}
@@ -140,11 +140,11 @@ func (client *Client) LPop(key string) (string, error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if e.BytesDiffer(err) {
-		if e.IsRESPNull(err) {
+	if bytesDiffer(err) {
+		if isRESPNull(err) {
 			_, err := client.p.ParseNull()
 			return "", err
-		} else if e.IsRESPError(err) {
+		} else if isRESPError(err) {
 			_, err = client.p.ParseError()
 			return "", err
 		}
@@ -167,7 +167,7 @@ func (client *Client) LPush(key string, args ...string) error {
 		return err
 	}
 	_, err = client.p.ParseNull()
-	if e.BytesDiffer(err) && e.IsRESPError(err) {
+	if bytesDiffer(err) && isRESPError(err) {
 		_, err = client.p.ParseError()
 		return err
 	}
@@ -185,11 +185,11 @@ func (client *Client) LIndex(key string, index int) (string, error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if e.BytesDiffer(err) {
-		if e.IsRESPNull(err) {
+	if bytesDiffer(err) {
+		if isRESPNull(err) {
 			_, err = client.p.ParseNull()
 			return "", err
-		} else if e.IsRESPError(err) {
+		} else if isRESPError(err) {
 			_, err = client.p.ParseError()
 			return "", err
 		}
@@ -208,7 +208,7 @@ func (client *Client) Del(key string) error {
 		return err
 	}
 	_, err = client.p.ParseNull()
-	if e.BytesDiffer(err) && e.IsRESPError(err) {
+	if bytesDiffer(err) && isRESPError(err) {
 		_, err = client.p.ParseError()
 		return err
 	}
@@ -226,7 +226,7 @@ func (client *Client) Ping() (string, error) {
 		return "", err
 	}
 	result, _, err := client.p.ParseBlobString()
-	if e.BytesDiffer(err) && e.IsRESPError(err) {
+	if bytesDiffer(err) && isRESPError(err) {
 		_, err = client.p.ParseError()
 		return "", err
 	}
@@ -241,4 +241,19 @@ func (client *Client) sendBytes(b []byte) error {
 		return redigoError
 	}
 	return nil
+}
+
+func bytesDiffer(err error) bool {
+	nerr, ok := err.(e.Error)
+	return nerr.Code == 5 && ok
+}
+
+func isRESPNull(err error) bool {
+	nerr, ok := err.(e.Error)
+	return nerr.ExtraContext["received"] == "_" && ok
+}
+
+func isRESPError(err error) bool {
+	nerr, ok := err.(e.Error)
+	return nerr.ExtraContext["received"] == "-" && ok
 }

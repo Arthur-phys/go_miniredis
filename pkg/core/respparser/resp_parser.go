@@ -59,9 +59,7 @@ func (r *RESPParser) Read() (int, error) {
 	r.rawBufferPosition = 0
 	n, err := (*r.conn).Read(r.rawBuffer)
 	if err != nil {
-		redigoError := e.UnableToReadFromConnection
-		redigoError.From = err
-		return n, redigoError
+		return n, err
 	}
 	// From 4096 bytes, how many are actually non empty?
 	r.rawBufferEffectiveSize = n

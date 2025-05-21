@@ -64,7 +64,7 @@ func main() {
 	}
 
 	s, err := server.New(&serverConfig)
-	if err.Code != 0 {
+	if err != nil {
 		fmt.Printf("Fatal error occurred - %v\n", err)
 		return
 	}
