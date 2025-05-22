@@ -4,6 +4,34 @@
 // It also has the worker implementation, but this is not accessible to the library's user.
 //
 // Take into consideration that there is no RESP handshake.
+//
+// An example of creating a server is provided here:
+//
+//	 import (
+//	  "github.com/Arthur-phys/redigo/pkg/client"
+//	  "net"
+//	  "fmt"
+//	 )
+//
+//	 fn main() {
+//	  serverConfig := server.Configuration{
+//	   IpAddress:              "127.0.0.1",
+//	   Port:                   8000,
+//	   WorkerAmount:           1,
+//	   KeepAlive:              15,
+//	   MessageSizeLimit:       10240,
+//	   ShutdownTolerance:      5,
+//	   CacheStoreInstantiator: caches.NewSimpleCache,
+//	  }
+//
+//	  s, err := server.New(&serverConfig)
+//
+//	  if err != nil {
+//		fmt.Printf("Fatal error occurred - %v\n", err)
+//		return
+//	  }
+//	  s.Run()
+//	}
 package server
 
 import (

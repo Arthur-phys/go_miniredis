@@ -1,14 +1,16 @@
 // An example of creating & using a REDIGO client
-package main
+package example
 
 import (
 	"fmt"
 	"net"
 
 	"github.com/Arthur-phys/redigo/pkg/client"
+	"github.com/Arthur-phys/redigo/pkg/core/caches"
+	"github.com/Arthur-phys/redigo/pkg/server"
 )
 
-func main() {
+func ExampleClient() {
 	conn, err := net.Dial("tcp", "127.0.0.1:8000")
 	if err != nil {
 		fmt.Printf("Fatal error occurred! %v", err)
@@ -42,4 +44,23 @@ func main() {
 	}
 	fmt.Printf("I got this! %v\n", res)
 	conn.Close()
+}
+
+func ExampleServer() {
+	serverConfig := server.Configuration{
+		IpAddress:              "127.0.0.1",
+		Port:                   8000,
+		WorkerAmount:           1,
+		KeepAlive:              15,
+		MessageSizeLimit:       10240,
+		ShutdownTolerance:      5,
+		CacheStoreInstantiator: caches.NewSimpleCache,
+	}
+
+	s, err := server.New(&serverConfig)
+	if err != nil {
+		fmt.Printf("Fatal error occurred - %v\n", err)
+		return
+	}
+	s.Run()
 }

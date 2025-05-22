@@ -1,3 +1,12 @@
+// Error is the error type used in the redigo package. It contains information about
+// the content of the error, the client context, the error code, and any additional context that may be useful
+// Refrain from using this error type outside of the redigo package, as it is not intended for public use.
+// Every function that returns an error does so via the error interface, which is the standard way of handling errors in Go.
+// If you ever so need to check for this error type, use the functions provided at the bottom.
+//
+// This is by far the biggest flaw in the redigo package, as it is not always idiomatic to use a custom error type, but coming
+// from a RUST background, my brain could not comprehend using interfaces for error checking instead of a centralized error type.
+// Check https://dave.cheney.net/practical-go/presentations/gophercon-israel.html#_assert_errors_for_behaviour_not_type
 package redigoerr
 
 import (
