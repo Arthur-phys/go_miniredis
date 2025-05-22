@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 func TestBlobString_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
@@ -43,7 +43,7 @@ func TestNull_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
 }
 
 func TestErrToBytes_Should_Return_Expected_Formatted_Bytes(t *testing.T) {
-	sampleErr := e.Error{Content: "HI", Code: 22, From: nil}
+	sampleErr := redigoerr.Error{Content: "HI", Code: 22, From: nil}
 	byteString := Err(sampleErr)
 	arr := []byte{'-'}
 	arr = fmt.Appendf(arr, "\r\n")

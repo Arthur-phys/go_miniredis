@@ -11,7 +11,7 @@ import (
 	"net"
 
 	"github.com/Arthur-phys/redigo/pkg/core/respparser"
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 type Client struct {
@@ -230,13 +230,13 @@ func (client *Client) Ping() (string, error) {
 		_, err = client.p.ParseError()
 		return "", err
 	}
-	return result, e.Error{}
+	return result, nil
 }
 
 func (client *Client) sendBytes(b []byte) error {
 	_, err := (*client.conn).Write(b)
 	if err != nil {
-		redigoError := e.UnableToSendRequestToServer
+		redigoError := redigoerr.UnableToSendRequestToServer
 		redigoError.From = err
 		return redigoError
 	}
@@ -244,16 +244,16 @@ func (client *Client) sendBytes(b []byte) error {
 }
 
 func bytesDiffer(err error) bool {
-	nerr, ok := err.(e.Error)
+	nerr, ok := err.(redigoerr.Error)
 	return nerr.Code == 5 && ok
 }
 
 func isRESPNull(err error) bool {
-	nerr, ok := err.(e.Error)
+	nerr, ok := err.(redigoerr.Error)
 	return nerr.ExtraContext["received"] == "_" && ok
 }
 
 func isRESPError(err error) bool {
-	nerr, ok := err.(e.Error)
+	nerr, ok := err.(redigoerr.Error)
 	return nerr.ExtraContext["received"] == "-" && ok
 }

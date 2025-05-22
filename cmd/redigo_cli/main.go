@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/Arthur-phys/redigo/pkg/client"
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 var ipAddress string
@@ -125,7 +125,7 @@ out:
 			continue
 		}
 
-		if e.ConnectionRelated(err) {
+		if redigoerr.ConnectionRelated(err) {
 			fmt.Println("! Connection closed by the server")
 			break
 		} else if err != nil {

@@ -1,4 +1,4 @@
-package error
+package redigoerr
 
 import (
 	"fmt"
@@ -7,10 +7,8 @@ import (
 )
 
 var (
-	KeyNotFoundInDictionary = Error{"Key not found in dictionary", "", 1, nil, make(map[string]string)}
-	IndexOutOfRangeErr      = Error{"Index set is out of range", "", 2, nil, make(map[string]string)}
-
-	// Not cheked errors
+	KeyNotFoundInDictionary        = Error{"Key not found in dictionary", "", 1, nil, make(map[string]string)}
+	IndexOutOfRangeErr             = Error{"Index set is out of range", "", 2, nil, make(map[string]string)}
 	UnableToReadFirstByte          = Error{"Unable to read first byte", "", 3, nil, make(map[string]string)}
 	UnableToFindPattern            = Error{"Unable to find byte pattern in byte stream", "", 4, nil, make(map[string]string)}
 	UnexpectedFirstByte            = Error{"First byte was different from expected", "Command malformed", 5, nil, make(map[string]string)}
@@ -38,7 +36,7 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("{CODE: %d -- CONTENT: %v -- FROM: %e}", e.Code, e.Content, e.From)
+	return fmt.Sprintf("{CODE: %d -- CONTENT: %v -- FROM: %e -- INFORMATION: %v}", e.Code, e.Content, e.From, e.ExtraContext)
 }
 
 func (e Error) LogValue() slog.Value {
@@ -71,5 +69,5 @@ func ExceededMaxSize(e error) bool {
 
 func BufferExhausted(e error) bool {
 	err, ok := e.(Error)
-	return err.Code == 0 || err.Code == 3 || err.Code == 4 || err.Code == 8 && ok
+	return err.Code == 3 || err.Code == 4 || err.Code == 8 && ok
 }

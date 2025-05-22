@@ -10,7 +10,7 @@ import (
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
 	"github.com/Arthur-phys/redigo/pkg/core/tobytes"
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 // RESPParser is responsible for holding all the methods to abstract
@@ -86,7 +86,7 @@ func (r *RESPParser) Read() (int, error) {
 		r.lastCommand = []byte{}
 		r.lastCommandUnprocessed = false
 		r.totalBytesRead = 0
-		redigoError := e.MaxSizePerCallExceeded
+		redigoError := redigoerr.MaxSizePerCallExceeded
 		redigoError.ExtraContext["maxSize"] = fmt.Sprintf("%d", r.messageSizeLimit)
 		redigoError.ExtraContext["currentSize"] = fmt.Sprintf("%d", r.totalBytesRead)
 		return n, redigoError
@@ -156,7 +156,7 @@ func ParseArray[T any](r *RESPParser, transformer func(r *RESPParser) (T, int, e
 	}
 	i, err := strconv.Atoi(string(num))
 	if err != nil {
-		redigoError := e.UnableToDetermineBulkArraySize
+		redigoError := redigoerr.UnableToDetermineBulkArraySize
 		redigoError.From = err
 		return nil, totalBytesRead, redigoError
 	}
@@ -195,7 +195,7 @@ func (r *RESPParser) ParseBlobString() (string, int, error) {
 
 	long, err := strconv.Atoi(string(bytesArr))
 	if err != nil {
-		redigoError := e.UnableToDetermineRawStringSize
+		redigoError := redigoerr.UnableToDetermineRawStringSize
 		redigoError.From = err
 		return "", totalBytesRead, redigoError
 	}
@@ -204,7 +204,7 @@ func (r *RESPParser) ParseBlobString() (string, int, error) {
 	n, err = io.ReadFull(r.buffer, blobString)
 	totalBytesRead += n
 	if err != nil {
-		redigoError := e.UnableToReadBytes
+		redigoError := redigoerr.UnableToReadBytes
 		redigoError.From = err
 		return "", totalBytesRead, redigoError
 	}
@@ -212,7 +212,7 @@ func (r *RESPParser) ParseBlobString() (string, int, error) {
 	n, err = r.buffer.Discard(2)
 	totalBytesRead += n
 	if err != nil {
-		redigoError := e.UnableToReadBytes
+		redigoError := redigoerr.UnableToReadBytes
 		redigoError.From = err
 		return "", totalBytesRead, redigoError
 	}
@@ -238,7 +238,7 @@ func (r *RESPParser) ParseNull() (int, error) {
 		return totalBytesRead, err
 	}
 	if n != 2 {
-		return totalBytesRead, e.NotNullFoundInPlaceOfNull
+		return totalBytesRead, redigoerr.NotNullFoundInPlaceOfNull
 	}
 
 	return totalBytesRead, nil
@@ -265,7 +265,7 @@ func (r *RESPParser) ParseUInt() (int, int, error) {
 
 	num, err := strconv.Atoi(string(integerReceived))
 	if err != nil {
-		redigoError := e.UnableToConvertLenToInt
+		redigoError := redigoerr.UnableToConvertLenToInt
 		redigoError.From = err
 		return 0, totalBytesRead, redigoError
 	}
@@ -288,7 +288,7 @@ func (r *RESPParser) ParseError() (int, error) {
 		return totalBytesRead, err
 	}
 	totalBytesRead += n
-	finalErr := e.ErrorReceived
+	finalErr := redigoerr.ErrorReceived
 	finalErr.ExtraContext["text"] = string(errorReceived)
 	return totalBytesRead, finalErr
 }
@@ -296,13 +296,13 @@ func (r *RESPParser) ParseError() (int, error) {
 func (r *RESPParser) checkFirstByte(b byte) error {
 	firstByte, err := r.buffer.ReadByte()
 	if err != nil {
-		redigoError := e.UnableToReadFirstByte
+		redigoError := redigoerr.UnableToReadFirstByte
 		redigoError.From = err
 		return redigoError
 	}
 	if firstByte != b {
 		err := r.buffer.UnreadByte()
-		redigoError := e.UnexpectedFirstByte
+		redigoError := redigoerr.UnexpectedFirstByte
 		redigoError.From = err
 		redigoError.ExtraContext["expected"] = string(b)
 		redigoError.ExtraContext["received"] = string(firstByte)
@@ -319,7 +319,7 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, error) {
 	sliceFoundRecursive = func(delim []byte, bytesRead []byte) ([]byte, error) {
 		bytes, err := r.buffer.ReadBytes(delim[0])
 		if err != nil {
-			redigoError := e.UnableToFindPattern
+			redigoError := redigoerr.UnableToFindPattern
 			redigoError.From = err
 			redigoError.ExtraContext["pattern"] = string(delim)
 			return bytesRead, redigoError
@@ -329,7 +329,7 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, error) {
 		for i := 1; i < len(delim); i++ {
 			newByte, err := r.buffer.ReadByte()
 			if err != nil {
-				redigoError := e.UnableToFindPattern
+				redigoError := redigoerr.UnableToFindPattern
 				redigoError.From = err
 				return bytesRead, redigoError
 			}
@@ -353,11 +353,10 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, error) {
 // Here's where you would implement a new command.
 func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error), error) {
 	var f func(d interfaces.CacheStore) ([]byte, error)
-	var redigoError e.Error
 	switch arr[0] {
 	case "GET":
 		if len(arr) != 2 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "2"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -365,7 +364,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		return func(d interfaces.CacheStore) ([]byte, error) {
 			if val, err := d.Get(arr[1]); err == nil {
 				return tobytes.BlobString(val), nil
-			} else if e.KeyNotFound(err) {
+			} else if redigoerr.KeyNotFound(err) {
 				return tobytes.Null(), nil
 			} else {
 				return []byte{}, err
@@ -373,7 +372,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		}, nil
 	case "SET":
 		if len(arr) != 3 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "3"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -387,7 +386,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		}, nil
 	case "RPUSH":
 		if len(arr) < 3 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = ">= 3"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -401,7 +400,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		}, nil
 	case "RPOP":
 		if len(arr) != 2 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "2"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -410,14 +409,14 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			val, err := d.RPop(arr[1])
 			if err == nil {
 				return tobytes.BlobString(val), nil
-			} else if e.KeyNotFound(err) {
+			} else if redigoerr.KeyNotFound(err) {
 				return tobytes.Null(), nil
 			}
 			return []byte{}, err
 		}, nil
 	case "LPUSH":
 		if len(arr) < 3 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "> 3"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -431,7 +430,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		}, nil
 	case "LPOP":
 		if len(arr) != 2 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "2"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -440,14 +439,14 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			val, err := d.LPop(arr[1])
 			if err == nil {
 				return tobytes.BlobString(val), nil
-			} else if e.KeyNotFound(err) {
+			} else if redigoerr.KeyNotFound(err) {
 				return tobytes.Null(), nil
 			}
 			return []byte{}, err
 		}, nil
 	case "LLEN":
 		if len(arr) != 2 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "2"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -461,7 +460,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		}, nil
 	case "LINDEX":
 		if len(arr) != 3 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "3"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -469,13 +468,13 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		return func(d interfaces.CacheStore) ([]byte, error) {
 			index, err := strconv.Atoi(arr[2])
 			if err != nil {
-				redigoError := e.UnableToConvertIndexToInt
+				redigoError := redigoerr.UnableToConvertIndexToInt
 				redigoError.From = err
 				redigoError.ExtraContext["provided"] = arr[2]
 				return []byte{}, redigoError
 			}
 			val, err := d.LIndex(arr[1], index)
-			if e.KeyNotFound(err) || e.IndexOutOfRange(err) {
+			if redigoerr.KeyNotFound(err) || redigoerr.IndexOutOfRange(err) {
 				return tobytes.Null(), nil
 			} else if err != nil {
 				return []byte{}, err
@@ -484,7 +483,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 		}, nil
 	case "DEL":
 		if len(arr) != 2 {
-			redigoError = e.InsufficientLength
+			redigoError := redigoerr.InsufficientLength
 			redigoError.ExtraContext["expected"] = "2"
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
@@ -501,7 +500,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			return tobytes.Pong(), nil
 		}, nil
 	default:
-		redigoError := e.FunctionNotFound
+		redigoError := redigoerr.FunctionNotFound
 		redigoError.ExtraContext["function"] = arr[0]
 		return f, redigoError
 	}

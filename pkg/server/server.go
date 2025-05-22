@@ -20,7 +20,7 @@ import (
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
 	"github.com/Arthur-phys/redigo/pkg/core/respparser"
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 // Server holds all information related to a server.
@@ -101,7 +101,7 @@ func New(serverConfig *Configuration) (*Server, error) {
 	listenerConfig := net.ListenConfig{KeepAlive: -1}
 	listener, err := listenerConfig.Listen(context.Background(), "tcp", net.JoinHostPort(serverConfig.IpAddress, fmt.Sprintf("%d", serverConfig.Port)))
 	if err != nil {
-		redigoError := e.UnableToCreateServer
+		redigoError := redigoerr.UnableToCreateServer
 		redigoError.From = err
 		return &Server{}, redigoError
 	}

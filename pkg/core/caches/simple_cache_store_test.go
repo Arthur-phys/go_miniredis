@@ -6,7 +6,7 @@ package caches
 import (
 	"testing"
 
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 func TestSet_Should_Return_NIL_When_Set_Is_Done(t *testing.T) {
@@ -77,7 +77,7 @@ func TestRPop_Should_Delete_List_When_Empty(t *testing.T) {
 	if val, err := cs.RPop("KEYVECTOR"); err != nil || val != "REDIGO" {
 		t.Errorf("An error occured! %v - %v", err, val)
 	}
-	if _, err := cs.RPop("KEYVECTOR"); !e.KeyNotFound(err) {
+	if _, err := cs.RPop("KEYVECTOR"); !redigoerr.KeyNotFound(err) {
 		t.Errorf("Unexpected error occurred! %v", err)
 	}
 }
@@ -98,7 +98,7 @@ func TestRPop_Should_Remove_Elements_In_Succession(t *testing.T) {
 	if val, err := cs.RPop("KEYVECTOR"); err != nil || val != "REDIGO" {
 		t.Errorf("An error occured! %v - %v", err, val)
 	}
-	if _, err := cs.RPop("KEYVECTOR"); !e.KeyNotFound(err) {
+	if _, err := cs.RPop("KEYVECTOR"); !redigoerr.KeyNotFound(err) {
 		t.Errorf("Unexpected error occurred! %v", err)
 	}
 }
@@ -127,7 +127,7 @@ func TestLPop_Should_Delete_List_When_Empty(t *testing.T) {
 	if val, err := cs.LPop("KEYVECTOR"); err != nil || val != "REDIGO" {
 		t.Errorf("An error occured! %v - %v", err, val)
 	}
-	if _, err := cs.LPop("KEYVECTOR"); !e.KeyNotFound(err) {
+	if _, err := cs.LPop("KEYVECTOR"); !redigoerr.KeyNotFound(err) {
 		t.Errorf("Unexpected error occurred! %v", err)
 	}
 }
@@ -148,7 +148,7 @@ func TestLPop_Should_Remove_Elements_In_Succession(t *testing.T) {
 	if val, err := cs.LPop("KEYVECTOR"); err != nil || val != "REDIGO" {
 		t.Errorf("An error occured! %v - %v", err, val)
 	}
-	if _, err := cs.LPop("KEYVECTOR"); !e.KeyNotFound(err) {
+	if _, err := cs.LPop("KEYVECTOR"); !redigoerr.KeyNotFound(err) {
 		t.Errorf("Unexpected error occurred! %v", err)
 	}
 }

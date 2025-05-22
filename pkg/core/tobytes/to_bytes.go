@@ -7,7 +7,7 @@ package tobytes
 import (
 	"fmt"
 
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 func BlobString(s string) []byte {
@@ -23,7 +23,7 @@ func Null() []byte {
 }
 
 func Err(err error) []byte {
-	redigoError, ok := err.(e.Error)
+	redigoError, ok := err.(redigoerr.Error)
 	if !ok {
 		return fmt.Appendf([]byte{'-'}, "Internal Server Error\r\n")
 	}

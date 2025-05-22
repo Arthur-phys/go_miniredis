@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
-	e "github.com/Arthur-phys/redigo/pkg/error"
+	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
 
 // SimpleCache may be of utility to you if you don't care about performace or have very few clients
@@ -32,9 +32,9 @@ func (c *SimpleCache) Get(key string) (string, error) {
 		if v, ok := v.(string); ok {
 			return v, nil
 		}
-		return "", e.WrongType
+		return "", redigoerr.WrongType
 	} else {
-		err := e.KeyNotFoundInDictionary
+		err := redigoerr.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
 		return "", err
 	}
@@ -51,7 +51,7 @@ func (c *SimpleCache) RPush(key string, args ...string) error {
 			c.dict[key] = append(v, args...)
 			return nil
 		}
-		return e.WrongType
+		return redigoerr.WrongType
 	} else {
 		c.dict[key] = args
 	}
@@ -68,9 +68,9 @@ func (c *SimpleCache) RPop(key string) (string, error) {
 			}
 			return x, nil
 		}
-		return "", e.WrongType
+		return "", redigoerr.WrongType
 	} else {
-		err := e.KeyNotFoundInDictionary
+		err := redigoerr.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
 		return "", err
 	}
@@ -88,7 +88,7 @@ func (c *SimpleCache) LPush(key string, args ...string) error {
 			c.dict[key] = append(args, v...)
 			return nil
 		}
-		return e.WrongType
+		return redigoerr.WrongType
 	} else {
 		c.dict[key] = args
 	}
@@ -105,9 +105,9 @@ func (c *SimpleCache) LPop(key string) (string, error) {
 			}
 			return x, nil
 		}
-		return "", e.WrongType
+		return "", redigoerr.WrongType
 	} else {
-		err := e.KeyNotFoundInDictionary
+		err := redigoerr.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
 		return "", err
 	}
@@ -119,14 +119,14 @@ func (c *SimpleCache) LIndex(key string, index int) (string, error) {
 			if len(v) > index && index >= 0 {
 				return v[index], nil
 			} else {
-				err := e.IndexOutOfRangeErr
+				err := redigoerr.IndexOutOfRangeErr
 				err.ExtraContext = map[string]string{"index": fmt.Sprintf("%d", index)}
 				return "", err
 			}
 		}
-		return "", e.WrongType
+		return "", redigoerr.WrongType
 	} else {
-		err := e.KeyNotFoundInDictionary
+		err := redigoerr.KeyNotFoundInDictionary
 		err.ExtraContext = map[string]string{"key": key}
 		return "", err
 	}
@@ -141,7 +141,7 @@ func (c *SimpleCache) LLen(key string) (int, error) {
 	if v, ok := c.dict[key].([]string); ok {
 		return len(v), nil
 	}
-	return 0, e.WrongType
+	return 0, redigoerr.WrongType
 }
 
 func (c *SimpleCache) Lock() {
