@@ -57,6 +57,9 @@ out:
 			continue
 		}
 		commands := filter(strings.Split(line[:len(line)-1], " "), func(s string) bool { return s != "" })
+		if len(commands) == 0 {
+			continue
+		}
 		switch strings.ToUpper(commands[0]) {
 		case "GET":
 			if len(commands) != 2 {

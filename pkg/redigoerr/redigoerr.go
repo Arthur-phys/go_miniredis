@@ -1,9 +1,11 @@
 package redigoerr
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 )
 
 var (
@@ -49,7 +51,7 @@ func (e Error) LogValue() slog.Value {
 }
 
 func ConnectionRelated(err error) bool {
-	return err == io.EOF || err == io.ErrUnexpectedEOF
+	return err == io.EOF || err == io.ErrUnexpectedEOF || errors.Is(err, os.ErrDeadlineExceeded) || err == io.ErrClosedPipe
 }
 
 func IndexOutOfRange(e error) bool {
