@@ -36,7 +36,7 @@ func ExampleClient() {
 		fmt.Printf("Fatal error occurred! %e\n", err)
 	}
 	fmt.Printf("I got this! %v\n", res)
-	err = c.LPush("Gatos", "Niji", "Anubis", "Pingüica", "Don Bigos")
+	err = c.LPush("Gatos", "Niji", "Anubis", "Don Bigos", "Pingüica")
 	if err != nil {
 		fmt.Printf("Fatal error occurred! %e\n", err)
 	}
