@@ -15,15 +15,13 @@ import (
 // worker accepts new tcp connections and responds to clients
 // by parsing their commands.
 type worker struct {
-	cacheStore        *cache.Cache
-	parser            *respparser.RESPParser
-	connections       chan net.Conn
-	timeout           int64
-	id                uint64
-	notifications     chan struct{}
-	shutdownTolerance int64
-	shutdown          bool
-	shutdownWaiter    *sync.WaitGroup
+	cacheStore     *cache.Cache
+	parser         *respparser.RESPParser
+	connections    chan net.Conn
+	timeout        int64
+	id             uint64
+	notifications  chan struct{}
+	shutdownWaiter *sync.WaitGroup
 }
 
 // handleConnection answer a single client until the connection closes or a timeout happens
@@ -40,9 +38,8 @@ func (w *worker) handleConnection(c *net.Conn) {
 		select {
 		// When signailed to stop, give the connection a last chance to be read and receive an answer
 		case <-w.notifications:
-			(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.shutdownTolerance)))
 			slog.Debug("Starting shutdown for worker, finishing any active connections", slog.Uint64("WORKERID", w.id))
-			w.shutdown = true
+			return
 
 		default:
 			finalResponse := []byte{}
@@ -110,10 +107,6 @@ func (w *worker) handleConnection(c *net.Conn) {
 				return
 			}
 
-			// Restart timer if not signailed to stop
-			if w.shutdown {
-				continue
-			}
 			(*c).SetDeadline(time.Now().Add(time.Second * time.Duration(w.timeout)))
 		}
 	}

@@ -49,7 +49,7 @@ redigo_server --ip=127.0.0.1 --port=6379 --worker_amount=30 --message_size=10240
 ### 🗣️ For the redigo_cli
 
 ```sh
-redigo_cli
+redigo_cli --port=6379 --ip=127.0.0.1
 ```
 _Use `EXIT` to exit the REPL._
 

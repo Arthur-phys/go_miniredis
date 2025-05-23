@@ -110,7 +110,7 @@ func (s *Server) Run() {
 	case <-shutdownSignailer:
 		slog.Info("All workers closed, terminating server")
 		// Give an extra 5 secs for workers to do stuff before being left behind
-	case <-time.After(time.Duration(s.shutdownTolerance) + time.Second*5):
+	case <-time.After(time.Duration(s.shutdownTolerance+1) * time.Second):
 		slog.Error("Unable to close all workers, terminating server anyway")
 	}
 }
@@ -146,14 +146,13 @@ func New(serverConfig *Configuration) (*Server, error) {
 		notifications := make(chan struct{}, 1)
 		workerNotifiers[i] = notifications
 		worker := worker{
-			cacheStore:        cacheStore,
-			connections:       connections,
-			timeout:           serverConfig.KeepAlive,
-			notifications:     notifications,
-			id:                i,
-			shutdownTolerance: serverConfig.ShutdownTolerance,
-			parser:            respparser.New(nil, serverConfig.MessageSizeLimit),
-			shutdownWaiter:    shutdownWaiter,
+			cacheStore:     cacheStore,
+			connections:    connections,
+			timeout:        serverConfig.KeepAlive,
+			notifications:  notifications,
+			id:             i,
+			parser:         respparser.New(nil, serverConfig.MessageSizeLimit),
+			shutdownWaiter: shutdownWaiter,
 		}
 		go worker.run()
 	}
