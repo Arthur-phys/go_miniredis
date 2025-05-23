@@ -1,6 +1,3 @@
-//go:build e2e
-// +build e2e
-
 package e2e
 
 import (
@@ -8,20 +5,18 @@ import (
 	"net"
 	"testing"
 
-	"github.com/Arthur-phys/redigo/pkg/core/caches"
 	"github.com/Arthur-phys/redigo/pkg/server"
 )
 
 func TestE2E_Server_Full(t *testing.T) {
 
 	serverConfig := server.Configuration{
-		IpAddress:              "127.0.0.1",
-		Port:                   8000,
-		WorkerAmount:           1,
-		KeepAlive:              5,
-		MessageSizeLimit:       10240,
-		ShutdownTolerance:      1,
-		CacheStoreInstantiator: caches.NewSimpleCache,
+		IpAddress:         "127.0.0.1",
+		Port:              8000,
+		WorkerAmount:      1,
+		KeepAlive:         5,
+		MessageSizeLimit:  10240,
+		ShutdownTolerance: 1,
 	}
 
 	s, err := server.New(&serverConfig)

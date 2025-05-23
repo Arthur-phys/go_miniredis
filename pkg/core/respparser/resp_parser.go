@@ -8,7 +8,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
+	"github.com/Arthur-phys/redigo/pkg/core/cache"
 	"github.com/Arthur-phys/redigo/pkg/core/tobytes"
 	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
@@ -97,11 +97,11 @@ func (r *RESPParser) Read() (int, error) {
 // ParseCommand will use the RESPParser to parse as many commands as possible from the given internal buffer.
 //
 // It returns all commands able to be parsed at once to the client, incluiding any errors.
-func (r *RESPParser) ParseCommand() ([]func(d interfaces.CacheStore) ([]byte, error), error) {
+func (r *RESPParser) ParseCommand() ([]func(d *cache.Cache) ([]byte, error), error) {
 	var (
 		// To create the array of strings this function needs to call itself
 		internalParser func() error
-		commands       []func(d interfaces.CacheStore) ([]byte, error)
+		commands       []func(d *cache.Cache) ([]byte, error)
 	)
 
 	internalParser = func() error {
@@ -351,8 +351,8 @@ func (r *RESPParser) readUntilSliceFound(delim []byte) ([]byte, int, error) {
 // selectFunction will read an array of strings and return a command to be run on the cache.
 //
 // Here's where you would implement a new command.
-func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error), error) {
-	var f func(d interfaces.CacheStore) ([]byte, error)
+func selectFunction(arr []string) (func(d *cache.Cache) ([]byte, error), error) {
+	var f func(d *cache.Cache) ([]byte, error)
 	switch arr[0] {
 	case "GET":
 		if len(arr) != 2 {
@@ -361,7 +361,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			if val, err := d.Get(arr[1]); err == nil {
 				return tobytes.BlobString(val), nil
 			} else if redigoerr.KeyNotFound(err) {
@@ -377,7 +377,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			err := d.Set(arr[1], arr[2])
 			if err != nil {
 				return []byte{}, err
@@ -391,7 +391,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			err := d.RPush(arr[1], arr[2:]...)
 			if err != nil {
 				return []byte{}, err
@@ -405,7 +405,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			val, err := d.RPop(arr[1])
 			if err == nil {
 				return tobytes.BlobString(val), nil
@@ -421,7 +421,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			err := d.LPush(arr[1], arr[2:]...)
 			if err != nil {
 				return []byte{}, err
@@ -435,7 +435,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			val, err := d.LPop(arr[1])
 			if err == nil {
 				return tobytes.BlobString(val), nil
@@ -451,7 +451,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			val, err := d.LLen(arr[1])
 			if err != nil {
 				return []byte{}, err
@@ -465,7 +465,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			index, err := strconv.Atoi(arr[2])
 			if err != nil {
 				redigoError := redigoerr.UnableToConvertIndexToInt
@@ -488,7 +488,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			redigoError.ExtraContext["obtained"] = fmt.Sprintf("%v", len(arr))
 			return f, redigoError
 		}
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			err := d.Del(arr[1])
 			if err != nil {
 				return []byte{}, err
@@ -496,7 +496,7 @@ func selectFunction(arr []string) (func(d interfaces.CacheStore) ([]byte, error)
 			return tobytes.Null(), nil
 		}, nil
 	case "PING":
-		return func(d interfaces.CacheStore) ([]byte, error) {
+		return func(d *cache.Cache) ([]byte, error) {
 			return tobytes.Pong(), nil
 		}, nil
 	default:

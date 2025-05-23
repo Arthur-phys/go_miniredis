@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Arthur-phys/redigo/pkg/core/caches"
+	"github.com/Arthur-phys/redigo/pkg/core/cache"
 	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 )
 
@@ -23,7 +23,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -55,7 +55,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -87,7 +87,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -126,7 +126,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -167,7 +167,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -221,7 +221,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_S
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -253,7 +253,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -285,7 +285,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Error_To_Client_When_E
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,
@@ -325,7 +325,7 @@ func TestIntegration_WorkerhandleConnection_Should_Return_Message_To_Client_When
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	cacheStore := caches.NewSimpleCache()
+	cacheStore := cache.New()
 	channel := make(chan net.Conn)
 	newWorker := worker{
 		cacheStore:     cacheStore,

@@ -1,12 +1,14 @@
+//go:build e2e
+// +build e2e
+
 // An example of creating & using a REDIGO client
-package example
+package e2e
 
 import (
 	"fmt"
 	"net"
 
 	"github.com/Arthur-phys/redigo/pkg/client"
-	"github.com/Arthur-phys/redigo/pkg/core/caches"
 	"github.com/Arthur-phys/redigo/pkg/server"
 )
 
@@ -48,13 +50,12 @@ func ExampleClient() {
 
 func ExampleServer() {
 	serverConfig := server.Configuration{
-		IpAddress:              "127.0.0.1",
-		Port:                   8000,
-		WorkerAmount:           1,
-		KeepAlive:              15,
-		MessageSizeLimit:       10240,
-		ShutdownTolerance:      5,
-		CacheStoreInstantiator: caches.NewSimpleCache,
+		IpAddress:         "127.0.0.1",
+		Port:              8000,
+		WorkerAmount:      1,
+		KeepAlive:         15,
+		MessageSizeLimit:  10240,
+		ShutdownTolerance: 5,
 	}
 
 	s, err := server.New(&serverConfig)

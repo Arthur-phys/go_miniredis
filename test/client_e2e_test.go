@@ -8,20 +8,18 @@ import (
 	"testing"
 
 	"github.com/Arthur-phys/redigo/pkg/client"
-	"github.com/Arthur-phys/redigo/pkg/core/caches"
 	"github.com/Arthur-phys/redigo/pkg/server"
 )
 
 func TestE2E_Client_Full(t *testing.T) {
 
 	serverConfig := server.Configuration{
-		IpAddress:              "127.0.0.1",
-		Port:                   8001,
-		WorkerAmount:           1,
-		KeepAlive:              1,
-		MessageSizeLimit:       10240,
-		ShutdownTolerance:      1,
-		CacheStoreInstantiator: caches.NewSimpleCache,
+		IpAddress:         "127.0.0.1",
+		Port:              8001,
+		WorkerAmount:      1,
+		KeepAlive:         1,
+		MessageSizeLimit:  10240,
+		ShutdownTolerance: 1,
 	}
 
 	s, err := server.New(&serverConfig)

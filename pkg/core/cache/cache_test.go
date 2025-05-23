@@ -1,7 +1,7 @@
 //go:build !integration && !e2e
 // +build !integration,!e2e
 
-package caches
+package cache
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestSet_Should_Return_NIL_When_Set_Is_Done(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.Set("KEY", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -18,14 +18,14 @@ func TestSet_Should_Return_NIL_When_Set_Is_Done(t *testing.T) {
 }
 
 func TestGet_Should_Return_Error_When_Key_Not_Present(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	if _, err := cs.Get("KEY"); err == nil {
 		t.Errorf("A key is present when it should not be!")
 	}
 }
 
 func TestGet_Should_Return_Value_And_Nil_When_Key_Is_Present(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.Set("KEY", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -35,8 +35,8 @@ func TestGet_Should_Return_Value_And_Nil_When_Key_Is_Present(t *testing.T) {
 	}
 }
 
-func TestRPush_Should_Create_NewSimpleCache_List_In_Cache_When_Not_Present(t *testing.T) {
-	cs := NewSimpleCache()
+func TestRPush_Should_Create_NewCache_List_In_Cache_When_Not_Present(t *testing.T) {
+	cs := New()
 	err := cs.RPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -47,7 +47,7 @@ func TestRPush_Should_Create_NewSimpleCache_List_In_Cache_When_Not_Present(t *te
 }
 
 func TestRPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.RPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -62,14 +62,14 @@ func TestRPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
 }
 
 func TestRPop_Should_Return_Error_When_List_Is_Not_Present(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	if _, err := cs.RPop("KEYVECTOR"); err == nil {
 		t.Errorf("Expected error but obtained nil! %v", err)
 	}
 }
 
 func TestRPop_Should_Delete_List_When_Empty(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.RPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -83,7 +83,7 @@ func TestRPop_Should_Delete_List_When_Empty(t *testing.T) {
 }
 
 func TestRPop_Should_Remove_Elements_In_Succession(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.RPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -104,7 +104,7 @@ func TestRPop_Should_Remove_Elements_In_Succession(t *testing.T) {
 }
 
 func TestLPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.LPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -119,7 +119,7 @@ func TestLPush_Should_Add_To_List_In_Cache_When_Present(t *testing.T) {
 }
 
 func TestLPop_Should_Delete_List_When_Empty(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.LPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -133,7 +133,7 @@ func TestLPop_Should_Delete_List_When_Empty(t *testing.T) {
 }
 
 func TestLPop_Should_Remove_Elements_In_Succession(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.LPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -154,14 +154,14 @@ func TestLPop_Should_Remove_Elements_In_Succession(t *testing.T) {
 }
 
 func TestLPop_Should_Return_Error_When_List_Is_Not_Present(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	if _, err := cs.LPop("KEYVECTOR"); err == nil {
 		t.Errorf("Expected error but obtained nil! %v", err)
 	}
 }
 
 func TestLIndex_Should_Return_Element_When_Present_In_List(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.LPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)
@@ -180,7 +180,7 @@ func TestLIndex_Should_Return_Element_When_Present_In_List(t *testing.T) {
 }
 
 func TestLIndex_Should_Return_Error_When_Index_Not_Present_In_List(t *testing.T) {
-	cs := NewSimpleCache()
+	cs := New()
 	err := cs.LPush("KEYVECTOR", "REDIGO")
 	if err != nil {
 		t.Errorf("An error occurred! %v", err)

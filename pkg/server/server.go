@@ -21,7 +21,7 @@
 //	   KeepAlive:              15,
 //	   MessageSizeLimit:       10240,
 //	   ShutdownTolerance:      5,
-//	   CacheStoreInstantiator: caches.NewSimpleCache,
+//	   CacheStoreInstantiator: caches.NewCache,
 //	  }
 //
 //	  s, err := server.New(&serverConfig)
@@ -46,7 +46,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
+	"github.com/Arthur-phys/redigo/pkg/core/cache"
 	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 	"github.com/Arthur-phys/redigo/pkg/redigoerr"
 )
@@ -56,7 +56,7 @@ import (
 // stopping them when signailed like so by the OS or user (Using Ctrl+C for example)
 type Server struct {
 	listener          net.Listener
-	cacheStore        interfaces.CacheStore
+	cacheStore        *cache.Cache
 	connections       chan net.Conn
 	signals           chan os.Signal
 	workerNotifiers   []chan struct{}
@@ -139,7 +139,7 @@ func New(serverConfig *Configuration) (*Server, error) {
 	signals := make(chan os.Signal, 1)
 	workerNotifiers := make([]chan struct{}, serverConfig.WorkerAmount)
 	shutdownWaiter := &sync.WaitGroup{}
-	cacheStore := serverConfig.CacheStoreInstantiator()
+	cacheStore := cache.New()
 
 	// Creating workers and running them
 	for i := range serverConfig.WorkerAmount {
@@ -174,11 +174,10 @@ func New(serverConfig *Configuration) (*Server, error) {
 // Configuration is a helper struct to be more idiomatic when configuring a server.
 // You can see it in action in the cmd/redigo_server/ command.
 type Configuration struct {
-	IpAddress              string
-	Port                   uint16
-	WorkerAmount           uint64
-	KeepAlive              int64
-	MessageSizeLimit       int
-	ShutdownTolerance      int64
-	CacheStoreInstantiator func() interfaces.CacheStore
+	IpAddress         string
+	Port              uint16
+	WorkerAmount      uint64
+	KeepAlive         int64
+	MessageSizeLimit  int
+	ShutdownTolerance int64
 }

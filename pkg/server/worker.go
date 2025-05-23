@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Arthur-phys/redigo/pkg/core/interfaces"
+	"github.com/Arthur-phys/redigo/pkg/core/cache"
 	"github.com/Arthur-phys/redigo/pkg/core/respparser"
 	"github.com/Arthur-phys/redigo/pkg/core/tobytes"
 	"github.com/Arthur-phys/redigo/pkg/redigoerr"
@@ -15,7 +15,7 @@ import (
 // worker accepts new tcp connections and responds to clients
 // by parsing their commands.
 type worker struct {
-	cacheStore        interfaces.CacheStore
+	cacheStore        *cache.Cache
 	parser            *respparser.RESPParser
 	connections       chan net.Conn
 	timeout           int64
